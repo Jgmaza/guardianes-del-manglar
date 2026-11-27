@@ -1,5 +1,6 @@
 import {
-  createSupabaseServiceClient,
+  createReportsPersistenceClient,
+  isReportsPersistenceConfigured,
   isSupabaseServiceConfigured,
   SupabaseReportsRepository,
 } from '@guardianes/database';
@@ -15,8 +16,8 @@ declare global {
 
 /**
  * Process-local report service.
- * - Without Supabase service role → in-memory only (demo).
- * - With NEXT_PUBLIC_SUPABASE_* + SUPABASE_SERVICE_ROLE_KEY → write-through to Postgres.
+ * - Without Supabase public config → in-memory only (demo).
+ * - With NEXT_PUBLIC_SUPABASE_* (+ optional SERVICE_ROLE) → write-through to Postgres.
  * Override with REPORTS_PERSISTENCE=memory to force memory mode.
  */
 export function getReportService(): PersistingReportService {
@@ -25,17 +26,23 @@ export function getReportService(): PersistingReportService {
     const inner = ReportService.create(categories);
 
     let repo: SupabaseReportsRepository | null = null;
-    if (isSupabaseServiceConfigured()) {
+    if (isReportsPersistenceConfigured()) {
       try {
-        const client = createSupabaseServiceClient();
+        const client = createReportsPersistenceClient();
         repo = new SupabaseReportsRepository(client);
-        // Best-effort seed of local triage categories (non-blocking for first request).
-        void Promise.all(categories.map((c) => repo!.upsertCategory(c))).catch((err) => {
+        // Best-effort sequential seed (reuse DB ids by code; avoid parallel races).
+        void (async () => {
+          for (const category of categories) {
+            await repo!.upsertCategory(category);
+          }
+        })().catch((err) => {
           console.error('Failed to seed report_categories in Supabase', err);
         });
-        console.info('[reports] persistence=supabase');
+        console.info(
+          `[reports] persistence=supabase (${isSupabaseServiceConfigured() ? 'service_role' : 'anon'})`,
+        );
       } catch (err) {
-        console.error('[reports] Supabase service client unavailable — using memory', err);
+        console.error('[reports] Supabase client unavailable — using memory', err);
         repo = null;
       }
     } else {

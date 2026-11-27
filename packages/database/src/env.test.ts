@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   getSupabasePublicConfig,
+  isReportsPersistenceConfigured,
   isSupabaseConfigured,
   isSupabaseServiceConfigured,
 } from './env';
@@ -32,27 +33,25 @@ describe('@guardianes/database env', () => {
     ).toBe(false);
   });
 
-  it('requires service role for persistence', () => {
-    expect(
-      isSupabaseServiceConfigured({
-        NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon-example',
-      }),
-    ).toBe(false);
+  it('detects service role vs reports persistence gates', () => {
+    const base = {
+      NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon-example',
+    };
+
+    expect(isSupabaseServiceConfigured(base)).toBe(false);
+    expect(isReportsPersistenceConfigured(base)).toBe(true);
 
     expect(
       isSupabaseServiceConfigured({
-        NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon-example',
+        ...base,
         SUPABASE_SERVICE_ROLE_KEY: 'service-role',
       }),
     ).toBe(true);
 
     expect(
-      isSupabaseServiceConfigured({
-        NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon-example',
-        SUPABASE_SERVICE_ROLE_KEY: 'service-role',
+      isReportsPersistenceConfigured({
+        ...base,
         REPORTS_PERSISTENCE: 'memory',
       }),
     ).toBe(false);
