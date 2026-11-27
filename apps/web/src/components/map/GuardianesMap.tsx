@@ -23,19 +23,27 @@ const PRIORITY_COLORS: Record<string, string> = {
   Bajo: PRIORITY_STYLES.Bajo?.color ?? '#10b981',
 };
 
-const SPECIES_COLORS: Record<string, string> = {
-  'A. germinans': '#0f766e',
-  'C. erectus': '#3f6212',
-  'R. mangle': '#9f1239',
-  'L. racemosa': '#a16207',
-};
-
 const SPECIES_LABELS: Record<string, string> = {
   'A. germinans': 'Mangle negro / salado',
   'C. erectus': 'Mangle zaragoza',
   'R. mangle': 'Mangle rojo',
   'L. racemosa': 'Mangle amarillo',
 };
+
+/** INVEMAR intervention level → impact color on the map */
+const IMPACT_COLORS: Record<string, string> = {
+  Alta: '#dc2626',
+  Media: '#f59e0b',
+  Baja: '#10b981',
+};
+
+function interventionLevel(raw: unknown): 'Alta' | 'Media' | 'Baja' | 'Sin dato' {
+  const text = String(raw ?? '');
+  if (/alta/i.test(text)) return 'Alta';
+  if (/media/i.test(text)) return 'Media';
+  if (/baja/i.test(text)) return 'Baja';
+  return 'Sin dato';
+}
 
 const STATUS_COLORS: Record<string, string> = {
   submitted: '#38bdf8',
@@ -143,19 +151,20 @@ export function GuardianesMap({
           const craLayer = L.geoJSON(craJson, {
             style: (feature) => {
               const pri = String(feature?.properties?.Val_Priori ?? 'Bajo');
+              const color = PRIORITY_COLORS[pri] ?? '#15803d';
               return {
-                color: PRIORITY_COLORS[pri] ?? '#15803d',
-                weight: 1.5,
-                dashArray: '4 3',
-                fillColor: PRIORITY_COLORS[pri] ?? '#15803d',
-                fillOpacity: 0.12,
+                color,
+                weight: pri === 'Alto' ? 2.5 : 2,
+                dashArray: pri === 'Alto' ? undefined : '5 4',
+                fillColor: color,
+                fillOpacity: pri === 'Alto' ? 0.35 : pri === 'Medio' ? 0.28 : 0.2,
               };
             },
             onEachFeature: (feature, layer) => {
               const p = feature.properties ?? {};
               layer.bindPopup(
                 popupShell(
-                  `Zona prioritaria C.R.A. · ${p.NOMUH ?? p.name ?? 'Unidad'}`,
+                  `Zona de impacto C.R.A. · ${p.NOMUH ?? p.name ?? 'Unidad'}`,
                   [
                     ['Prioridad', String(p.Val_Priori ?? '—')],
                     ['Zona hidro.', String(p.NOMZH ?? '—')],
@@ -163,7 +172,7 @@ export function GuardianesMap({
                     ['Acción', String(p.AccionGen ?? '—')],
                     ['Escenario', String(p.Escenarios ?? '—')],
                   ],
-                  'Capa C.R.A. Prioridades de conservación (muestra ~75 de 14 732). No es inventario de manglar.',
+                  'Cuadrante de prioridad C.R.A. (muestra ~75 de 14 732). No es inventario de manglar.',
                 ),
               );
             },
@@ -179,27 +188,31 @@ export function GuardianesMap({
           const invJson = await invRes.json();
           const invLayer = L.geoJSON(invJson, {
             style: (feature) => {
-              const sp = String(feature?.properties?.COB_SPDOM ?? '');
+              const level = interventionLevel(feature?.properties?.C4_INTRV_1);
+              const color = IMPACT_COLORS[level] ?? '#64748b';
               return {
-                color: SPECIES_COLORS[sp] ?? '#115e59',
-                weight: 1,
-                fillColor: SPECIES_COLORS[sp] ?? '#115e59',
-                fillOpacity: 0.45,
+                color,
+                weight: 1.25,
+                fillColor: color,
+                fillOpacity: level === 'Alta' ? 0.5 : level === 'Media' ? 0.4 : 0.32,
               };
             },
             onEachFeature: (feature, layer) => {
               const p = feature.properties ?? {};
               const sp = String(p.COB_SPDOM ?? '');
+              const level = interventionLevel(p.C4_INTRV_1);
               layer.bindPopup(
                 popupShell(
-                  `Manglar INVEMAR · ${p.LOCALIDAD ?? 'Sin localidad'}`,
+                  `Impacto manglar · ${p.LOCALIDAD ?? 'Sin localidad'}`,
                   [
+                    ['Intervención', String(p.C4_INTRV_1 ?? level)],
+                    ['Degradación', String(p.C1_GRADO_1 ?? '—')],
+                    ['Uso actual', String(p.USOACTUAL ?? '—')],
                     ['Especie dominante', `${sp || '—'} (${SPECIES_LABELS[sp] ?? '—'})`],
-                    ['Composición', String(p.COB_CMPSCI ?? '—')],
                     ['Zonificación', String(p.ZONIF ?? '—')],
-                    ['Estructura', String((p.COB_ESTRCT ?? '—')).slice(0, 90)],
+                    ['Conflicto de uso', String(p.C10_CONFLI ?? '—')],
                   ],
-                  'INVEMAR SIGMA · Zonificación Atlántico (196 polígonos, geom. simplificada). Citar INVEMAR.',
+                  'INVEMAR SIGMA · color = nivel de intervención (impacto). Citar INVEMAR.',
                 ),
               );
             },
@@ -357,13 +370,13 @@ export function GuardianesMap({
             active={layerCra}
             onClick={() => setLayerCra((v) => !v)}
             swatchClass="border-dashed border-orange-500 bg-orange-500/20"
-            label={`Prioridades C.R.A. (${counts.cra || '…'})`}
+            label={`Zonas impacto C.R.A. (${counts.cra || '…'})`}
           />
           <LayerToggle
             active={layerInvemar}
             onClick={() => setLayerInvemar((v) => !v)}
             swatchClass="border-teal-700 bg-teal-700/50"
-            label={`Manglares INVEMAR (${counts.invemar || '…'})`}
+            label={`Impacto INVEMAR (${counts.invemar || '…'})`}
           />
           <LayerToggle
             active={layerReports}
@@ -378,26 +391,22 @@ export function GuardianesMap({
 
       {mode === 'overview' ? (
         <div className="grid gap-4 border-t border-slate-200 bg-white p-4 text-xs md:grid-cols-3">
-          <LegendBlock title="1. Prioridades C.R.A. (polígonos punteados)">
+          <LegendBlock title="1. Zonas de impacto C.R.A. (cuadrantes)">
             <p className="mb-2 text-slate-500">
-              Unidades hidrográficas priorizadas. No son manglares individuales.
+              Prioridad de conservación por unidad hidrográfica. Rojo = más crítico.
             </p>
-            <SwatchRow color={PRIORITY_COLORS.Alto ?? '#c2410c'} label="Prioridad Alta" dashed />
-            <SwatchRow color={PRIORITY_COLORS.Medio ?? '#ca8a04'} label="Prioridad Media" dashed />
-            <SwatchRow color={PRIORITY_COLORS.Bajo ?? '#15803d'} label="Prioridad Baja" dashed />
+            <SwatchRow color={PRIORITY_COLORS.Alto ?? '#dc2626'} label="Impacto alto" />
+            <SwatchRow color={PRIORITY_COLORS.Medio ?? '#f59e0b'} label="Impacto medio" dashed />
+            <SwatchRow color={PRIORITY_COLORS.Bajo ?? '#10b981'} label="Impacto bajo" dashed />
           </LegendBlock>
 
-          <LegendBlock title="2. Manglares INVEMAR (polígonos rellenos)">
+          <LegendBlock title="2. Impacto manglar INVEMAR">
             <p className="mb-2 text-slate-500">
-              Zonificación por especie dominante y manejo (Atlántico).
+              Color = intervención observada (tala, basura, etc.). Clic para especie y uso.
             </p>
-            {Object.entries(SPECIES_COLORS).map(([code, color]) => (
-              <SwatchRow
-                key={code}
-                color={color}
-                label={`${code} — ${SPECIES_LABELS[code] ?? code}`}
-              />
-            ))}
+            <SwatchRow color={IMPACT_COLORS.Alta ?? '#dc2626'} label="Alta intervención" />
+            <SwatchRow color={IMPACT_COLORS.Media ?? '#f59e0b'} label="Media intervención" />
+            <SwatchRow color={IMPACT_COLORS.Baja ?? '#10b981'} label="Baja intervención" />
           </LegendBlock>
 
           <LegendBlock title="3. Reportes ciudadanos (puntos)">

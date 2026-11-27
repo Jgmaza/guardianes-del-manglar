@@ -16,6 +16,7 @@ export function readGeographicMigrationSql(): string {
 export const GEOGRAPHIC_MIGRATION_FILES = [
   '001_geographic.sql',
   '003_geo_match.sql',
+  '005_geo_impact_zones.sql',
 ] as const;
 
 export const REPORTS_MIGRATION_FILES = ['002_reports.sql'] as const;

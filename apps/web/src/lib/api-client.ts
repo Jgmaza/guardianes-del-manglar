@@ -78,6 +78,33 @@ export async function fetchDashboardReports(): Promise<DashboardReport[]> {
   return (json.data ?? []).map((r) => withGeoDefaults(r));
 }
 
+export type OfficialImpactZone = {
+  locality: string;
+  hectares: number;
+  polygonCount: number;
+  dominantSpecies: string | null;
+  managementZone: string | null;
+  intervention: string | null;
+  degradation: string | null;
+  currentUse: string | null;
+  landConflict: string | null;
+  faunaPressure: string | null;
+  impactScore: number;
+};
+
+export type ImpactZonesSummary = {
+  source: { invemar: string; cra: string };
+  craPriorityCounts: Array<{ priority: string; count: number }>;
+  zones: OfficialImpactZone[];
+};
+
+export async function fetchOfficialImpactZones(): Promise<ImpactZonesSummary | null> {
+  const res = await fetch('/api/v1/geo/impact-zones');
+  if (!res.ok) return null;
+  const json = (await res.json()) as { data?: ImpactZonesSummary };
+  return json.data ?? null;
+}
+
 export async function trackReport(trackingCode: string, trackingSecret: string) {
   const res = await fetch('/api/v1/reports/track', {
     method: 'POST',

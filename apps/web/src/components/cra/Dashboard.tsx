@@ -124,30 +124,6 @@ export function CraDashboard() {
     const resolved = reports.filter(
       (r) => r.status === 'accepted' || r.status === 'rejected',
     ).length;
-    const byPriority = {
-      Alto: open.filter((r) => r.priorityHint === 'Alto').length,
-      Medio: open.filter((r) => r.priorityHint === 'Medio').length,
-      Bajo: open.filter((r) => r.priorityHint === 'Bajo').length,
-      none: open.filter((r) => !r.priorityHint).length,
-    };
-    const byZone = new Map<string, { total: number; alto: number }>();
-    for (const r of open) {
-      const zone =
-        r.locality ||
-        r.unitHydro ||
-        r.zoneHydro ||
-        (r.priorityHint ? 'Con cobertura C.R.A.' : 'Sin zona / fuera de cobertura');
-      const row = byZone.get(zone) ?? { total: 0, alto: 0 };
-      row.total += 1;
-      if (r.priorityHint === 'Alto' || r.hasPreliminaryAlert || r.status === 'alerted') {
-        row.alto += 1;
-      }
-      byZone.set(zone, row);
-    }
-    const zones = [...byZone.entries()]
-      .map(([name, v]) => ({ name, ...v }))
-      .sort((a, b) => b.alto - a.alto || b.total - a.total)
-      .slice(0, 6);
     return {
       open: open.length,
       critical: critical.length,
@@ -156,8 +132,6 @@ export function CraDashboard() {
         reports.length === 0 ? 0 : Math.round((resolved / reports.length) * 100),
       resolved,
       total: reports.length,
-      byPriority,
-      zones,
     };
   }, [reports]);
 
@@ -212,86 +186,6 @@ export function CraDashboard() {
         />
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h2 className="text-sm font-bold text-slate-900">Zonas de impacto</h2>
-            <p className="text-xs text-slate-500">
-              Abiertos por prioridad C.R.A. · lo crítico primero
-            </p>
-          </div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-            Ordenados por urgencia en la bandeja
-          </p>
-        </div>
-        <div className="mt-3 flex h-3 overflow-hidden rounded-full bg-slate-100">
-          {(
-            [
-              ['Alto', summary.byPriority.Alto, '#dc2626'],
-              ['Medio', summary.byPriority.Medio, '#f59e0b'],
-              ['Bajo', summary.byPriority.Bajo, '#10b981'],
-              ['Sin cobertura', summary.byPriority.none, '#94a3b8'],
-            ] as const
-          ).map(([label, count, color]) =>
-            count > 0 ? (
-              <button
-                key={label}
-                type="button"
-                title={`${label}: ${count}`}
-                aria-label={`Filtrar ${label}: ${count}`}
-                className="h-full transition hover:opacity-90"
-                style={{
-                  width: `${Math.max(4, (count / Math.max(1, summary.open)) * 100)}%`,
-                  backgroundColor: color,
-                }}
-                onClick={() =>
-                  setPriorityFilter(
-                    label === 'Sin cobertura'
-                      ? priorityFilter === 'none'
-                        ? 'all'
-                        : 'none'
-                      : priorityFilter === label
-                        ? 'all'
-                        : label,
-                  )
-                }
-              />
-            ) : null,
-          )}
-        </div>
-        <div className="mt-2 flex flex-wrap gap-3 text-xs">
-          {(
-            [
-              ['Alto', summary.byPriority.Alto, 'text-red-700'],
-              ['Medio', summary.byPriority.Medio, 'text-amber-700'],
-              ['Bajo', summary.byPriority.Bajo, 'text-emerald-700'],
-              ['Sin cobertura', summary.byPriority.none, 'text-slate-500'],
-            ] as const
-          ).map(([label, count, tone]) => (
-            <span key={label} className={`font-semibold ${tone}`}>
-              {label === 'Alto' ? 'Alta' : label === 'Medio' ? 'Media' : label === 'Bajo' ? 'Baja' : label}:{' '}
-              {count}
-            </span>
-          ))}
-        </div>
-        {summary.zones.length > 0 ? (
-          <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {summary.zones.map((z) => (
-              <li
-                key={z.name}
-                className="flex items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-xs"
-              >
-                <span className="min-w-0 truncate font-semibold text-slate-800" title={z.name}>
-                  {z.name}
-                </span>
-                <span className="shrink-0 text-slate-600">
-                  {z.total} · <span className="font-bold text-red-700">{z.alto} críticos</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </section>
       {loadError ? (
         <p
           className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800"
