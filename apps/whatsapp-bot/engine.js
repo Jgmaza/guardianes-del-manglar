@@ -7,6 +7,12 @@ import {
   REGLAS,
   TIPOS_ALTO_RIESGO,
 } from "./data.js";
+import {
+  MANGLARCRA_URL,
+  contextoSectorLine,
+  rutaZona,
+  sectorOf,
+} from "./manglarcra.js";
 
 export const STEPS = {
   IDLE: "idle",
@@ -101,9 +107,11 @@ export function labelOf(pasoKey, id) {
 
 export function buildResult(session) {
   const { zona, tipo, nivel, privacidad } = session;
-  const decision = REGLAS[tipo][nivel][zona];
+  const ruta = rutaZona(zona);
+  const decision = REGLAS[tipo][nivel][ruta];
   const meta = NIVEL_META[nivel];
   const anonimo = privacidad === "ANONIMO";
+  const sector = sectorOf(zona);
 
   return {
     decision,
@@ -115,6 +123,11 @@ export function buildResult(session) {
     evidencia: meta.evidencia,
     privacidadLabel: labelOf("paso_privacidad", privacidad),
     zonaLabel: labelOf("paso_zona", zona),
+    zonaId: zona,
+    rutaZona: ruta,
+    sector,
+    sectorContexto: contextoSectorLine(zona),
+    mapaUrl: MANGLARCRA_URL,
     tipoLabel: labelOf("paso_tipo", tipo),
     nivelLabel: labelOf("paso_nivel", nivel),
     fallback: FALLBACK,
@@ -125,21 +138,28 @@ export function buildResult(session) {
 export function formatResultText(result) {
   const lines = [
     `*${result.titulo}* · ${result.prioridad}`,
+    `*Sector:* ${result.zonaLabel}`,
+  ];
+
+  if (result.sectorContexto) {
+    lines.push(result.sectorContexto);
+  }
+
+  lines.push(
     "",
     `*Llama / escribe a:* ${result.decision.entidad}`,
     result.decision.contacto,
     "",
     `*Haz esto:* ${result.decision.accion}`,
-  ];
+  );
 
   if (result.meta.prioridad === "P0") {
     lines.push("", result.fallback);
   }
 
-  lines.push("", "_menu_ = otro");
+  lines.push("", `Mapa: ${result.mapaUrl}`, "_menu_ = otro");
   return lines.join("\n");
 }
-
 function askPeligroText() {
   const paso = MENSAJES.paso_peligro;
   return ["*Manglar Alerta* — ¿hay peligro ahora?", formatOptions(paso.opciones)].join(

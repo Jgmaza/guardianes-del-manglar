@@ -99,15 +99,21 @@ function showResultCard() {
   const card = document.createElement("article");
   card.className = `result-card nivel-${session.nivel.toLowerCase()}`;
   const showFallback = result.meta.prioridad === "P0";
+  const sectorLine = result.sectorContexto
+    ? `<p class="result-sector"><strong>${result.zonaLabel}</strong> · ${result.sectorContexto.replace(/^[^:]+:\s*/, "")}</p>`
+    : `<p class="result-sector"><strong>${result.zonaLabel}</strong></p>`;
+
   card.innerHTML = `
     <div class="result-top">
       <p class="result-kicker">${result.titulo}</p>
       <span class="prio-pill">${result.prioridad}</span>
     </div>
     <p class="result-tone">${result.tono}</p>
+    ${sectorLine}
     <h2>${result.decision.entidad}</h2>
     <a class="result-contact" href="${telOrWaHref(result.decision.contacto)}">${result.decision.contacto}</a>
     <p class="result-action">${result.decision.accion}</p>
+    <a class="result-map" href="${result.mapaUrl}" target="_blank" rel="noopener noreferrer">Ver sector en mapa C.R.A.</a>
     ${showFallback ? `<p class="result-note">${result.fallback}</p>` : ""}
   `;
   messagesEl.appendChild(card);
