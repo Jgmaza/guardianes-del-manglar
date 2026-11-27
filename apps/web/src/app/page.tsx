@@ -1,16 +1,17 @@
 import { Button } from '@guardianes/ui';
-import { Camera, ClipboardList, CloudOff, Info, MapPin, ShieldCheck } from 'lucide-react';
+import { Award, Camera, ClipboardList, Info, MapPin, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { AppShell } from '@/components/layout/AppShell';
 
 const FEATURES = [
   { icon: MapPin, title: 'Foto + ubicación', body: 'Con GPS o marcando el punto en el mapa.' },
-  { icon: CloudOff, title: 'Funciona offline', body: 'Se sincroniza cuando vuelva la red.' },
+  { icon: Award, title: 'Insignias', body: 'Registra «yo estuve aquí» y gana tu sello de Guardian.' },
   { icon: ShieldCheck, title: 'Privacidad', body: 'Sin cuenta ni datos personales innecesarios.' },
 ];
 
 const ACTIONS = [
-  { href: '/reportar', icon: Camera, title: 'Nuevo reporte', body: 'Foto, ubicación y detalles' },
+  { href: '/reportar', icon: Camera, title: 'Nuevo reporte', body: 'Denuncia: foto, ubicación y detalles' },
+  { href: '/estuve-aqui', icon: Award, title: 'Yo estuve aquí', body: 'Foto de visita + insignia' },
   { href: '/seguimiento', icon: ClipboardList, title: 'Mis reportes', body: 'Consulta con código y secreto' },
 ];
 
@@ -36,9 +37,10 @@ export default function WelcomePage() {
                 Reportar ahora
               </Button>
             </Link>
-            <Link href="/seguimiento">
+            <Link href="/estuve-aqui">
               <Button variant="secondary" className="border-mg-400! bg-transparent! text-white! hover:bg-mg-800!">
-                Consultar estado
+                <Award className="h-4 w-4" aria-hidden />
+                Yo estuve aquí
               </Button>
             </Link>
           </div>

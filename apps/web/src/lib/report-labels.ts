@@ -73,6 +73,11 @@ export function isOpenReport(status: string): boolean {
   return status !== 'accepted' && status !== 'rejected';
 }
 
+/** Ciencia ciudadana / «yo estuve aquí» (no denuncia). */
+export function isAvistamiento(categoryCode: string | null | undefined): boolean {
+  return categoryCode === 'avistamiento';
+}
+
 export function timeAgo(iso: string, now: number = Date.now()): string {
   const minutes = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60000));
   if (minutes < 60) return `hace ${minutes} min`;
