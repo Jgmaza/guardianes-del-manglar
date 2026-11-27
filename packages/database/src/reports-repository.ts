@@ -425,7 +425,8 @@ export class SupabaseReportsRepository {
 
   /**
    * Pull recent reports into the in-memory domain store for the CRA dashboard.
-   * Idempotent merge — already-hydrated ids are skipped.
+   * Always refreshes location + latest geo_matched payload so DB edits show up
+   * on warm serverless instances (not only on first hydrate).
    */
   async hydrateRecent(store: ReportDomainStore, limit = 100): Promise<number> {
     const { data, error } = await this.client
@@ -436,14 +437,18 @@ export class SupabaseReportsRepository {
     if (error) throw new Error(`hydrateRecent: ${error.message}`);
     let loaded = 0;
     for (const row of (data ?? []) as ReportRow[]) {
-      if (store.reports.has(row.id)) continue;
-      await this.hydrateReportRow(store, row);
-      loaded += 1;
+      const existed = store.reports.has(row.id);
+      await this.hydrateReportRow(store, row, { refreshGeo: true });
+      if (!existed) loaded += 1;
     }
     return loaded;
   }
 
-  private async hydrateReportRow(store: ReportDomainStore, row: ReportRow): Promise<Report> {
+  private async hydrateReportRow(
+    store: ReportDomainStore,
+    row: ReportRow,
+    options: { refreshGeo?: boolean } = {},
+  ): Promise<Report> {
     const report = reportFromRow(row);
     store.reports.set(report.id, report);
     store.reportsByTrackingCode.set(report.trackingCode, report.id);
@@ -478,6 +483,7 @@ export class SupabaseReportsRepository {
       .select('*')
       .eq('report_id', report.id)
       .order('created_at', { ascending: true });
+    let latestGeo: ReportGeoMatch | null = null;
     for (const event of ((events ?? []) as EventRow[]).map(eventFromRow)) {
       if (!store.events.some((e) => e.id === event.id)) {
         store.events.push(event);
@@ -489,15 +495,20 @@ export class SupabaseReportsRepository {
           matchedAt?: string;
         };
         if (payload.cra && payload.invemar) {
-          store.geoMatches.set(report.id, {
+          latestGeo = {
             matchedAt: payload.matchedAt ?? event.createdAt,
             longitude: report.location.longitude,
             latitude: report.location.latitude,
             cra: payload.cra,
             invemar: payload.invemar,
-          });
+          };
         }
       }
+    }
+    if (latestGeo) {
+      store.geoMatches.set(report.id, latestGeo);
+    } else if (options.refreshGeo) {
+      store.geoMatches.delete(report.id);
     }
 
     const { data: evidences } = await this.client
