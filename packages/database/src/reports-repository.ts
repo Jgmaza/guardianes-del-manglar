@@ -260,9 +260,22 @@ export class SupabaseReportsRepository {
   constructor(private readonly client: SupabaseClient) {}
 
   async upsertCategory(category: ReportCategory): Promise<void> {
+    // Reuse existing UUID when code already exists (memory seeds new ids each boot).
+    const { data: existing, error: lookupError } = await this.client
+      .from('report_categories')
+      .select('id')
+      .eq('code', category.code)
+      .maybeSingle();
+    if (lookupError) throw new Error(`upsertCategory.lookup: ${lookupError.message}`);
+
+    const row = categoryToRow({
+      ...category,
+      id: (existing as { id?: string } | null)?.id ?? category.id,
+    });
+
     const { error } = await this.client
       .from('report_categories')
-      .upsert(categoryToRow(category), { onConflict: 'code' });
+      .upsert(row, { onConflict: 'code' });
     if (error) throw new Error(`upsertCategory: ${error.message}`);
   }
 

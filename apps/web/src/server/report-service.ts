@@ -30,8 +30,12 @@ export function getReportService(): PersistingReportService {
       try {
         const client = createReportsPersistenceClient();
         repo = new SupabaseReportsRepository(client);
-        // Best-effort seed of local triage categories (non-blocking for first request).
-        void Promise.all(categories.map((c) => repo!.upsertCategory(c))).catch((err) => {
+        // Best-effort sequential seed (reuse DB ids by code; avoid parallel races).
+        void (async () => {
+          for (const category of categories) {
+            await repo!.upsertCategory(category);
+          }
+        })().catch((err) => {
           console.error('Failed to seed report_categories in Supabase', err);
         });
         console.info(
