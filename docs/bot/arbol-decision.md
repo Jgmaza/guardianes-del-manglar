@@ -38,10 +38,7 @@ Las señales de peligro **solo suben** la urgencia a rojo; nunca la bajan.
 
 ## Referencias
 
-- Niveles de alerta / gestión del riesgo (UNGRD / SNIGRD)
-- Denuncia ambiental ANLA (permite anónimo; pide hechos, lugar, evidencia)
-- Ley 1333 de 2009 — medidas preventivas ante riesgo o daño inminente
-- Canales EPA Barranquilla Verde (ext. 107 / ventanilla / VITAL)
-- VITAL — ventanilla de quejas y denuncias ambientales (MinAmbiente)
+Tabla con links: [referencias.md](./referencias.md).
 
-Implementación: `apps/whatsapp-bot/data.js` + `engine.js`.
+Implementación: `apps/whatsapp-bot/data.js` + `engine.js`.  
+Contrato de reportes: [reports-mapping.md](./reports-mapping.md).

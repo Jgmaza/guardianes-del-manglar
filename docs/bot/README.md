@@ -25,4 +25,5 @@
 
 ## Referencias citadas
 
-Ver sección Referencias en [arbol-decision.md](./arbol-decision.md).
+Tabla completa: [referencias.md](./referencias.md).  
+Mapeo a la API de reportes: [reports-mapping.md](./reports-mapping.md).
