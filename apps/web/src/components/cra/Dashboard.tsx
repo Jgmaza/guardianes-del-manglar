@@ -4,8 +4,10 @@ import { Button } from '@guardianes/ui';
 import {
   BellRing,
   CheckCircle2,
+  ClipboardList,
   Clock3,
   Eye,
+  FileWarning,
   Info,
   MapPin,
   OctagonAlert,
@@ -13,10 +15,12 @@ import {
   Siren,
   Timer,
   X,
+  XCircle,
   type LucideIcon,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { TramitesTab } from '@/components/cra/TramitesTab';
 import {
   createAlert,
   fetchDashboardReports,
@@ -38,6 +42,8 @@ const GuardianesMap = dynamic(
   { ssr: false },
 );
 
+type CraTab = 'operativo' | 'tramites';
+
 const STATUSES = [
   'submitted',
   'geo_processed',
@@ -49,6 +55,7 @@ const STATUSES = [
 ] as const;
 
 export function CraDashboard() {
+  const [tab, setTab] = useState<CraTab>('operativo');
   const [reports, setReports] = useState<DashboardReport[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -63,6 +70,19 @@ export function CraDashboard() {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const modalTimerRef = useRef<number | null>(null);
+
+  const pendingTramites = useMemo(
+    () =>
+      reports.filter(
+        (r) =>
+          r.channel === 'pwa' &&
+          (r.status === 'submitted' ||
+            r.status === 'geo_processed' ||
+            r.status === 'needs_info' ||
+            r.status === 'under_review'),
+      ).length,
+    [reports],
+  );
 
   const closeDetail = useCallback(() => setDetailOpen(false), []);
 
@@ -188,6 +208,62 @@ export function CraDashboard() {
 
   return (
     <div className="space-y-5">
+      <div
+        className="flex overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-sm"
+        role="tablist"
+        aria-label="Secciones del panel C.R.A."
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'operativo'}
+          onClick={() => setTab('operativo')}
+          className={`flex flex-1 items-center justify-center gap-2 border-b-4 px-3 py-3 text-sm font-semibold transition ${
+            tab === 'operativo'
+              ? 'border-emerald-600 bg-white text-mg-900'
+              : 'border-transparent text-slate-600 hover:bg-white'
+          }`}
+        >
+          <BellRing className="h-4 w-4" aria-hidden />
+          Operativo
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'tramites'}
+          onClick={() => setTab('tramites')}
+          className={`flex flex-1 items-center justify-center gap-2 border-b-4 px-3 py-3 text-sm font-semibold transition ${
+            tab === 'tramites'
+              ? 'border-emerald-600 bg-white text-mg-900'
+              : 'border-transparent text-slate-600 hover:bg-white'
+          }`}
+        >
+          <ClipboardList className="h-4 w-4" aria-hidden />
+          Trámites
+          {pendingTramites > 0 ? (
+            <span className="rounded-full bg-blue-700 px-2 py-0.5 text-[11px] font-bold text-white">
+              {pendingTramites}
+            </span>
+          ) : null}
+        </button>
+      </div>
+
+      {loadError ? (
+        <p
+          className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800"
+          role="alert"
+        >
+          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+          {loadError}
+        </p>
+      ) : null}
+
+      {tab === 'tramites' ? (
+        <TramitesTab reports={reports} loading={loading} onRefresh={refresh} />
+      ) : null}
+
+      {tab === 'operativo' ? (
+      <>
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat
           icon={BellRing}
@@ -218,16 +294,6 @@ export function CraDashboard() {
           value={`${summary.resolvedPct}%`}
         />
       </section>
-
-      {loadError ? (
-        <p
-          className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800"
-          role="alert"
-        >
-          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-          {loadError}
-        </p>
-      ) : null}
 
       <div className="grid items-stretch gap-4 lg:grid-cols-[1.55fr_1fr] lg:gap-5">
         <section id="mapa-cra" className="flex min-w-0 flex-col scroll-mt-4">
@@ -453,20 +519,70 @@ export function CraDashboard() {
                 </div>
 
                 <div className="mt-auto flex flex-wrap gap-2">
-                  <Button
-                    onClick={() =>
-                      runAction(async () => {
-                        await patchReportStatus(selected.id, 'under_review', 'triage CRA');
-                        return 'Reporte marcado en revisión.';
-                      })
-                    }
-                  >
-                    <Eye className="h-4 w-4" aria-hidden />
-                    Marcar en revisión
-                  </Button>
+                  {isOpenReport(selected.status) && selected.status !== 'alerted' ? (
+                    <>
+                      <Button
+                        onClick={() =>
+                          runAction(async () => {
+                            await patchReportStatus(selected.id, 'under_review', 'triage CRA');
+                            return 'Reporte marcado en revisión.';
+                          })
+                        }
+                      >
+                        <Eye className="h-4 w-4" aria-hidden />
+                        En revisión
+                      </Button>
+                      <Button
+                        className="bg-emerald-700! hover:bg-emerald-800!"
+                        onClick={() =>
+                          runAction(async () => {
+                            if (
+                              selected.status === 'submitted' ||
+                              selected.status === 'needs_info'
+                            ) {
+                              await patchReportStatus(selected.id, 'under_review', 'pre-aprobación');
+                            }
+                            await patchReportStatus(selected.id, 'accepted', 'aprobado por C.R.A.');
+                            return 'Trámite aprobado.';
+                          })
+                        }
+                      >
+                        <CheckCircle2 className="h-4 w-4" aria-hidden />
+                        Aprobar
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        onClick={() =>
+                          runAction(async () => {
+                            await patchReportStatus(
+                              selected.id,
+                              'needs_info',
+                              'C.R.A. solicita más información',
+                            );
+                            return 'Se pidió más información.';
+                          })
+                        }
+                      >
+                        <FileWarning className="h-4 w-4" aria-hidden />
+                        Pedir info
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        className="border-red-600! text-red-700! hover:bg-red-50!"
+                        onClick={() =>
+                          runAction(async () => {
+                            await patchReportStatus(selected.id, 'rejected', 'rechazado por C.R.A.');
+                            return 'Trámite rechazado.';
+                          })
+                        }
+                      >
+                        <XCircle className="h-4 w-4" aria-hidden />
+                        Rechazar
+                      </Button>
+                    </>
+                  ) : null}
                   <Button
                     variant="secondary"
-                    className="border-red-600! text-red-700! hover:bg-red-50!"
                     onClick={() =>
                       runAction(async () => {
                         await createAlert(
@@ -479,7 +595,7 @@ export function CraDashboard() {
                     }
                   >
                     <Siren className="h-4 w-4" aria-hidden />
-                    Crear alerta preliminar
+                    Alerta preliminar
                   </Button>
                   <Button variant="secondary" onClick={() => void refresh()}>
                     <RefreshCw className="h-4 w-4" aria-hidden />
@@ -495,6 +611,8 @@ export function CraDashboard() {
             </div>
           </div>
         </div>
+      ) : null}
+      </>
       ) : null}
     </div>
   );
