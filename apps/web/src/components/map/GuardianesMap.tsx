@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { DashboardReport } from '@/lib/api-client';
+import { PRIORITY_STYLES } from '@/lib/report-labels';
 
 export type MapMode = 'citizen-pick' | 'overview';
 
@@ -13,12 +14,13 @@ type Props = {
   showCraPolygons?: boolean;
   showInvemarPolygons?: boolean;
   className?: string;
+  mapClassName?: string;
 };
 
 const PRIORITY_COLORS: Record<string, string> = {
-  Alto: '#c2410c',
-  Medio: '#ca8a04',
-  Bajo: '#15803d',
+  Alto: PRIORITY_STYLES.Alto?.color ?? '#dc2626',
+  Medio: PRIORITY_STYLES.Medio?.color ?? '#f59e0b',
+  Bajo: PRIORITY_STYLES.Bajo?.color ?? '#10b981',
 };
 
 const SPECIES_COLORS: Record<string, string> = {
@@ -69,6 +71,7 @@ export function GuardianesMap({
   showCraPolygons: showCraDefault = true,
   showInvemarPolygons: showInvemarDefault = true,
   className = '',
+  mapClassName = 'h-[360px] md:h-[480px]',
 }: Props) {
   const mapId = useId().replace(/:/g, '');
   const mapRef = useRef<import('leaflet').Map | null>(null);
@@ -109,9 +112,14 @@ export function GuardianesMap({
       });
       mapRef.current = map;
 
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap &copy; CARTO',
-        maxZoom: 18,
+      // CARTO (no API key). Avoid tile.openstreetmap.org — blocks apps without Referer
+      // and is often mistaken for an “outdated API key” when tiles fail.
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20,
+        referrerPolicy: 'strict-origin-when-cross-origin',
       }).addTo(map);
 
       const craGroup = L.layerGroup().addTo(map);
@@ -247,7 +255,7 @@ export function GuardianesMap({
         const statusColor = STATUS_COLORS[report.status] ?? '#38bdf8';
         const marker = L.circleMarker([report.location.latitude, report.location.longitude], {
           radius: 9,
-          color: '#0f172a',
+          color: '#ffffff',
           weight: 2,
           fillColor: statusColor,
           fillOpacity: 1,
@@ -282,7 +290,7 @@ export function GuardianesMap({
         L.circleMarker([pick.latitude, pick.longitude], {
           radius: 11,
           color: '#fff',
-          fillColor: '#0d9488',
+          fillColor: '#115740',
           fillOpacity: 1,
           weight: 3,
         })
@@ -316,10 +324,10 @@ export function GuardianesMap({
   }, [layerReports, ready]);
 
   return (
-    <div className={`overflow-hidden rounded-2xl border border-white/10 ${className}`}>
+    <div className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${className}`}>
       {mode === 'overview' ? (
-        <div className="flex flex-wrap items-center gap-2 border-b border-white/10 bg-black/40 px-3 py-2 text-xs">
-          <span className="mr-1 font-semibold uppercase tracking-wide text-[var(--muted)]">
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs">
+          <span className="mr-1 font-bold uppercase tracking-wide text-slate-500">
             Capas
           </span>
           <LayerToggle
@@ -343,12 +351,12 @@ export function GuardianesMap({
         </div>
       ) : null}
 
-      <div id={`map-${mapId}`} className="h-[360px] w-full md:h-[480px]" />
+      <div id={`map-${mapId}`} className={`w-full ${mapClassName}`} />
 
       {mode === 'overview' ? (
-        <div className="grid gap-4 border-t border-white/10 bg-black/35 p-4 text-xs md:grid-cols-3">
+        <div className="grid gap-4 border-t border-slate-200 bg-white p-4 text-xs md:grid-cols-3">
           <LegendBlock title="1. Prioridades C.R.A. (polígonos punteados)">
-            <p className="mb-2 text-[var(--muted)]">
+            <p className="mb-2 text-slate-500">
               Unidades hidrográficas priorizadas. No son manglares individuales.
             </p>
             <SwatchRow color={PRIORITY_COLORS.Alto ?? '#c2410c'} label="Prioridad Alta" dashed />
@@ -357,7 +365,7 @@ export function GuardianesMap({
           </LegendBlock>
 
           <LegendBlock title="2. Manglares INVEMAR (polígonos rellenos)">
-            <p className="mb-2 text-[var(--muted)]">
+            <p className="mb-2 text-slate-500">
               Zonificación por especie dominante y manejo (Atlántico).
             </p>
             {Object.entries(SPECIES_COLORS).map(([code, color]) => (
@@ -370,7 +378,7 @@ export function GuardianesMap({
           </LegendBlock>
 
           <LegendBlock title="3. Reportes ciudadanos (puntos)">
-            <p className="mb-2 text-[var(--muted)]">
+            <p className="mb-2 text-slate-500">
               Cada punto es un reporte. Color = estado del expediente. Clic para ver
               prioridad/zona/especie del join.
             </p>
@@ -382,7 +390,7 @@ export function GuardianesMap({
           </LegendBlock>
         </div>
       ) : (
-        <p className="bg-black/30 px-3 py-2 text-xs text-[var(--muted)]">
+        <p className="border-t border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
           Toca el mapa para fijar la ubicación del reporte.
         </p>
       )}
@@ -407,8 +415,8 @@ function LayerToggle({
       onClick={onClick}
       className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 transition ${
         active
-          ? 'border-white/30 bg-white/10 text-white'
-          : 'border-white/10 bg-transparent text-[var(--muted)] opacity-60'
+          ? 'border-mg-600 bg-mg-50 font-semibold text-mg-900'
+          : 'border-slate-200 bg-white text-slate-500 opacity-70'
       }`}
     >
       <span className={`inline-block h-3 w-3 rounded-sm border ${swatchClass}`} />
@@ -420,7 +428,7 @@ function LayerToggle({
 function LegendBlock({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div>
-      <h3 className="mb-1 font-semibold text-white">{title}</h3>
+      <h3 className="mb-1 font-bold text-slate-900">{title}</h3>
       {children}
     </div>
   );
@@ -438,9 +446,9 @@ function SwatchRow({
   round?: boolean;
 }) {
   return (
-    <div className="mb-1 flex items-center gap-2 text-[var(--muted)]">
+    <div className="mb-1 flex items-center gap-2 text-slate-600">
       <span
-        className={`inline-block shrink-0 border border-black/40 ${
+        className={`inline-block shrink-0 border border-slate-900/30 ${
           round ? 'h-3 w-3 rounded-full' : 'h-3 w-5 rounded-sm'
         }`}
         style={{
