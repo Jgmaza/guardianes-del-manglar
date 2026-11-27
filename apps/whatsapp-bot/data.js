@@ -39,11 +39,13 @@ export const MENSAJES = {
     ],
   },
   paso_zona: {
-    texto: "¿Dónde?",
+    texto: "¿En qué sector?",
     opciones: [
-      { id: "BQ", label: "Barranquilla" },
+      { id: "Z1", label: "Mallorquín / Bocas de Ceniza" },
+      { id: "Z2", label: "Pto. Colombia / Balboa / Velero" },
+      { id: "Z3", label: "Tubará / Juan de Acosta" },
+      { id: "Z4", label: "Totumo / Astilleros / Galerazamba" },
       { id: "MUN", label: "Otro municipio" },
-      { id: "COSTA", label: "Costa / manglar" },
     ],
   },
   paso_privacidad: {
