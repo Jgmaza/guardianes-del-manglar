@@ -65,7 +65,8 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      # `vercel pull` redacts Sensitive secrets as [SENSITIVE]; write real values for the build.
+      # `vercel pull` redacts Sensitive secrets as [SENSITIVE]. Also write apps/web/.env.production
+      # so Next.js (Root Directory apps/web) inlines NEXT_PUBLIC_* during vercel build.
       - name: Materialize server secrets for build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -73,20 +74,29 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           set -euo pipefail
-          ENV_FILE=".vercel/.env.production.local"
-          touch "$ENV_FILE"
-          for key in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY NEXT_PUBLIC_ENABLE_SUPABASE SUPABASE_SERVICE_ROLE_KEY NEXT_PUBLIC_APP_NAME NEXT_PUBLIC_APP_URL; do
-            grep -v "^${key}=" "$ENV_FILE" > "${ENV_FILE}.tmp" || true
-            mv "${ENV_FILE}.tmp" "$ENV_FILE"
-          done
-          {
-            echo "NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}"
-            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}"
-            echo "NEXT_PUBLIC_ENABLE_SUPABASE=true"
-            echo "SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}"
-            echo "NEXT_PUBLIC_APP_NAME=Guardianes del Manglar"
-            echo "NEXT_PUBLIC_APP_URL=https://guardianes-del-manglar.vercel.app"
-          } >> "$ENV_FILE"
+          write_env() {
+            local file="$1"
+            mkdir -p "$(dirname "$file")"
+            touch "$file"
+            for key in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY NEXT_PUBLIC_ENABLE_SUPABASE SUPABASE_SERVICE_ROLE_KEY NEXT_PUBLIC_APP_NAME NEXT_PUBLIC_APP_URL; do
+              grep -v "^${key}=" "$file" > "${file}.tmp" || true
+              mv "${file}.tmp" "$file"
+            done
+            {
+              echo "NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}"
+              echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}"
+              echo "NEXT_PUBLIC_ENABLE_SUPABASE=true"
+              echo "SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}"
+              echo "NEXT_PUBLIC_APP_NAME=Guardianes del Manglar"
+              echo "NEXT_PUBLIC_APP_URL=https://guardianes-del-manglar.vercel.app"
+            } >> "$file"
+            echo "wrote $file keys=$(cut -d= -f1 "$file" | paste -sd, -)"
+            grep -q '^NEXT_PUBLIC_ENABLE_SUPABASE=true$' "$file"
+            grep -q '^NEXT_PUBLIC_SUPABASE_URL=https://' "$file"
+            test -n "$(grep '^SUPABASE_SERVICE_ROLE_KEY=' "$file" | cut -d= -f2-)"
+          }
+          write_env ".vercel/.env.production.local"
+          write_env "apps/web/.env.production"
 
       - name: Build
         run: npx vercel@latest build --prod --token="${{ secrets.VERCEL_TOKEN }}"
