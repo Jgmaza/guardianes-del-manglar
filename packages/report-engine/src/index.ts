@@ -1,6 +1,7 @@
 export {
   assertNoPiiFields,
   stripReporterFromDashboardReport,
+  toDashboardListItem,
   toPublicTrackingView,
   toSanitizedExport,
 } from './anonymity';
@@ -27,6 +28,11 @@ export {
   getReportEvidences,
   type ReportDomainStore,
 } from './store';
+export {
+  TRIAGE_CATEGORY_DEFS,
+  createTriageCategoryCatalog,
+  triageTipoToCategoryCode,
+} from './triage-categories';
 
 /** @deprecated legacy draft helper — prefer ReportService.createReport */
 export { createReportSchema as parseReportDraftSchema } from '@guardianes/validation';

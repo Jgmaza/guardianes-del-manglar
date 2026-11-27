@@ -10,8 +10,8 @@ export async function GET(_request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
     // ensure report exists / dashboard-safe access path
-    getReportService().dashboardView(id);
-    const events = getReportService().listEvents(id);
+    await getReportService().dashboardView(id);
+    const events = await getReportService().listEvents(id);
     return NextResponse.json({ data: events });
   } catch (error) {
     return NextResponse.json(

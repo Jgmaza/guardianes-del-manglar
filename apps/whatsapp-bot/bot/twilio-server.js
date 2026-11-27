@@ -3,7 +3,7 @@ import twilio from "twilio";
 import dotenv from "dotenv";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { handleIncoming, STEPS } from "../engine.js";
+import { buildResult, handleIncoming, STEPS } from "../engine.js";
 import { createReport } from "../reports-client.js";
 
 dotenv.config({ path: path.join(path.dirname(fileURLToPath(import.meta.url)), "..", ".env") });
@@ -114,6 +114,9 @@ app.post("/whatsapp", async (req, res) => {
 
     if (session.step === STEPS.DONE && !session.reportCreated) {
       try {
+        if (!session.prioridad) {
+          session.prioridad = buildResult(session).prioridad;
+        }
         const created = await createReport(session, { from });
         if (created?.data) {
           session.reportCreated = true;

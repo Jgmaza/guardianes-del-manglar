@@ -37,6 +37,17 @@ export const trackingCodeSchema = z
 
 export const trackingSecretSchema = z.string().min(20).max(128);
 
+/** Optional WhatsApp/PWA triage snapshot — stored on report_events, not as PII */
+export const reportTriageSchema = z
+  .object({
+    tipo: z.string().min(1).max(64).optional(),
+    nivel: z.string().min(1).max(64).optional(),
+    zona: z.string().min(1).max(64).optional(),
+    privacidad: z.string().min(1).max(64).optional(),
+    prioridad: z.string().min(1).max(8).optional(),
+  })
+  .strict();
+
 /** Create report — no PII fields allowed on this contract */
 export const createReportSchema = z
   .object({
@@ -49,6 +60,8 @@ export const createReportSchema = z
     clientReportId: z.string().uuid().optional(),
     /** Optional opaque reporter handle (will be hashed + stored separately) */
     reporterHandle: z.string().min(3).max(256).optional(),
+    /** Structured triage from WhatsApp bot / PWA wizard */
+    triage: reportTriageSchema.optional(),
   })
   .strict();
 
@@ -91,6 +104,7 @@ export const transitionReportStatusSchema = z
 
 export type CreateReportInput = z.infer<typeof createReportSchema>;
 export type CreateReportDraftInput = CreateReportInput;
+export type ReportTriageInput = z.infer<typeof reportTriageSchema>;
 export type TrackReportInput = z.infer<typeof trackReportSchema>;
 export type AttachEvidenceMetaInput = z.infer<typeof attachEvidenceMetaSchema>;
 export type CreatePreliminaryAlertInput = z.infer<typeof createPreliminaryAlertSchema>;

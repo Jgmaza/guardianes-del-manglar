@@ -153,6 +153,12 @@ importers:
 
   packages/database:
     dependencies:
+      '@guardianes/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@guardianes/report-engine':
+        specifier: workspace:*
+        version: link:../report-engine
       '@supabase/supabase-js':
         specifier: ^2.47.10
         version: 2.119.2

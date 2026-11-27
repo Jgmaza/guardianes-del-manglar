@@ -1,7 +1,7 @@
 # REPORTS_API — contratos HTTP v1
 
-**Estado:** `IMPLEMENTED` (API foundation in-memory)  
-**Persistencia Supabase live:** `PENDING`
+**Estado:** `IMPLEMENTED` (API foundation)  
+**Persistencia Supabase:** `IMPLEMENTED` (activa cuando hay `SUPABASE_SERVICE_ROLE_KEY`; si no, memoria)
 
 Base: `/api/v1`
 
@@ -47,13 +47,29 @@ Crea un reporte canónico.
   "description": "Observación ciudadana",
   "categoryCode": "uncategorized",
   "clientReportId": "optional-uuid",
-  "reporterHandle": "optional-opaque-handle"
+  "reporterHandle": "optional-opaque-handle",
+  "triage": {
+    "tipo": "TALA",
+    "nivel": "AMARILLO",
+    "zona": "BQ",
+    "privacidad": "ANONIMO",
+    "prioridad": "P1"
+  }
 }
 ```
 
 `location.source`: `device_gps | map_pin | whatsapp_shared_location | unknown`
 
+`triage` (opcional): snapshot del bot WhatsApp; se guarda en `report_events` (`type=created`), no como PII.
+
 Campos PII explícitos (`email`, `phone`, etc.) son **rechazados** (objeto strict).
+
+### Persistencia
+
+1. Aplicar SQL: `packages/database/src/migrations/001_geographic.sql` + `002_reports.sql` en Supabase.
+2. En `apps/web/.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_ENABLE_SUPABASE=true`.
+3. El bot sigue igual: `REPORTS_API_URL` → `POST /api/v1/reports` (no habla con la DB).
+4. Sin service role (o `REPORTS_PERSISTENCE=memory`): sigue en memoria de proceso.
 
 ### Response `201`
 ```json

@@ -11,7 +11,7 @@ export const runtime = 'nodejs';
 export async function POST(request: Request) {
   try {
     const body: unknown = await request.json();
-    const view = getReportService().track(body);
+    const view = await getReportService().track(body);
     return NextResponse.json({ data: view });
   } catch (error) {
     return NextResponse.json(

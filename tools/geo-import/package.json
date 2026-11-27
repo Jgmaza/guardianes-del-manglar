@@ -18,6 +18,7 @@
     "start:query-point": "tsx src/cli.ts query-point",
     "start:query-bbox": "tsx src/cli.ts query-bbox",
     "load-supabase": "node ./scripts/load-supabase.mjs",
+    "import-invemar-zonificacion": "node ./scripts/import-invemar-zonificacion.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint src --max-warnings=0",
     "test": "vitest run",

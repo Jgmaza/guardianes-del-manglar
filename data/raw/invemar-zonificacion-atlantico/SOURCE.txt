@@ -1,0 +1,8 @@
+INVEMAR — SIGMA / Zonificación Atlántico
+https://gis.invemar.org.co/ArcGIS/rest/services/SIGMA/ZONIFICACION/MapServer/0
+Attribution: Instituto de Investigaciones Marinas y Costeras (INVEMAR)
+Layer documents mangrove zonification / structure / dominant species for Atlántico.
+Do not invent attributes. Preserve properties_original as downloaded.
+Fetched: 2026-11-27T20:48:09.420Z
+Feature count: 196
+SHA256: a5948e0d9871c4dd4a64fc85257e1d45a354767c524e15340630c9d57a3fb35b
