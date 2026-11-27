@@ -2,16 +2,16 @@
 
 import { Button } from '@guardianes/ui';
 import {
+  BellRing,
+  CheckCircle2,
   Clock3,
   Eye,
-  FileText,
-  Inbox,
   Info,
   MapPin,
+  OctagonAlert,
   RefreshCw,
   Siren,
   Timer,
-  TriangleAlert,
   type LucideIcon,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -23,7 +23,14 @@ import {
   patchReportStatus,
   type DashboardReport,
 } from '@/lib/api-client';
-import { priorityStyle, statusLabel, statusTone, timeAgo } from '@/lib/report-labels';
+import {
+  impactRank,
+  isOpenReport,
+  priorityStyle,
+  statusLabel,
+  statusTone,
+  timeAgo,
+} from '@/lib/report-labels';
 
 const GuardianesMap = dynamic(
   () => import('@/components/map/GuardianesMap').then((m) => m.GuardianesMap),
@@ -85,21 +92,72 @@ export function CraDashboard() {
   }, [selected]);
 
   const filtered = useMemo(() => {
-    return reports.filter((r) => {
-      if (statusFilter !== 'all' && r.status !== statusFilter) return false;
-      if (priorityFilter !== 'all' && (r.priorityHint ?? '') !== priorityFilter) return false;
-      if (categoryFilter !== 'all' && (r.categoryCode ?? '') !== categoryFilter) return false;
-      return true;
-    });
+    return reports
+      .filter((r) => {
+        if (statusFilter !== 'all' && r.status !== statusFilter) return false;
+        if (priorityFilter === 'none' && r.priorityHint) return false;
+        if (
+          priorityFilter !== 'all' &&
+          priorityFilter !== 'none' &&
+          (r.priorityHint ?? '') !== priorityFilter
+        ) {
+          return false;
+        }
+        if (categoryFilter !== 'all' && (r.categoryCode ?? '') !== categoryFilter) return false;
+        return true;
+      })
+      .slice()
+      .sort((a, b) => {
+        const byImpact = impactRank(a) - impactRank(b);
+        if (byImpact !== 0) return byImpact;
+        return new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime();
+      });
   }, [reports, statusFilter, priorityFilter, categoryFilter]);
 
   const summary = useMemo(() => {
+    const open = reports.filter((r) => isOpenReport(r.status));
+    const critical = open.filter(
+      (r) =>
+        r.priorityHint === 'Alto' || r.hasPreliminaryAlert || r.status === 'alerted',
+    );
+    const underReview = reports.filter((r) => r.status === 'under_review').length;
+    const resolved = reports.filter(
+      (r) => r.status === 'accepted' || r.status === 'rejected',
+    ).length;
+    const byPriority = {
+      Alto: open.filter((r) => r.priorityHint === 'Alto').length,
+      Medio: open.filter((r) => r.priorityHint === 'Medio').length,
+      Bajo: open.filter((r) => r.priorityHint === 'Bajo').length,
+      none: open.filter((r) => !r.priorityHint).length,
+    };
+    const byZone = new Map<string, { total: number; alto: number }>();
+    for (const r of open) {
+      const zone =
+        r.locality ||
+        r.unitHydro ||
+        r.zoneHydro ||
+        (r.priorityHint ? 'Con cobertura C.R.A.' : 'Sin zona / fuera de cobertura');
+      const row = byZone.get(zone) ?? { total: 0, alto: 0 };
+      row.total += 1;
+      if (r.priorityHint === 'Alto' || r.hasPreliminaryAlert || r.status === 'alerted') {
+        row.alto += 1;
+      }
+      byZone.set(zone, row);
+    }
+    const zones = [...byZone.entries()]
+      .map(([name, v]) => ({ name, ...v }))
+      .sort((a, b) => b.alto - a.alto || b.total - a.total)
+      .slice(0, 6);
     return {
+      open: open.length,
+      critical: critical.length,
+      underReview,
+      resolvedPct:
+        reports.length === 0 ? 0 : Math.round((resolved / reports.length) * 100),
+      resolved,
       total: reports.length,
-      pending: reports.filter((r) => r.status === 'submitted' || r.status === 'geo_processed')
-        .length,
-      underReview: reports.filter((r) => r.status === 'under_review').length,
-      alerted: reports.filter((r) => r.hasPreliminaryAlert || r.status === 'alerted').length,
+      byPriority,
+      zones,
     };
   }, [reports]);
 
@@ -125,29 +183,114 @@ export function CraDashboard() {
     <div className="space-y-5">
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat
-          icon={FileText}
-          tone="bg-mg-50 text-mg-800"
-          label="Reportes"
-          value={loading ? '…' : String(summary.total)}
+          icon={BellRing}
+          tone="bg-amber-100 text-amber-800"
+          label="Activos"
+          hint="Sin cerrar"
+          value={loading ? '…' : String(summary.open)}
+        />
+        <Stat
+          icon={OctagonAlert}
+          tone="bg-red-100 text-red-700"
+          label="Críticos"
+          hint="Prioridad alta o alerta"
+          value={String(summary.critical)}
         />
         <Stat
           icon={Timer}
-          tone="bg-amber-100 text-amber-700"
-          label="En revisión"
+          tone="bg-mg-50 text-mg-800"
+          label="En atención"
+          hint="En revisión C.R.A."
           value={String(summary.underReview)}
         />
         <Stat
-          icon={TriangleAlert}
-          tone="bg-red-100 text-red-600"
-          label="Con alerta"
-          value={String(summary.alerted)}
+          icon={CheckCircle2}
+          tone="bg-emerald-100 text-emerald-800"
+          label="Resolución"
+          hint={`${summary.resolved} de ${summary.total}`}
+          value={`${summary.resolvedPct}%`}
         />
-        <Stat
-          icon={Inbox}
-          tone="bg-sky-100 text-sky-700"
-          label="Sin revisar"
-          value={String(summary.pending)}
-        />
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">Zonas de impacto</h2>
+            <p className="text-xs text-slate-500">
+              Abiertos por prioridad C.R.A. · lo crítico primero
+            </p>
+          </div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            Ordenados por urgencia en la bandeja
+          </p>
+        </div>
+        <div className="mt-3 flex h-3 overflow-hidden rounded-full bg-slate-100">
+          {(
+            [
+              ['Alto', summary.byPriority.Alto, '#dc2626'],
+              ['Medio', summary.byPriority.Medio, '#f59e0b'],
+              ['Bajo', summary.byPriority.Bajo, '#10b981'],
+              ['Sin cobertura', summary.byPriority.none, '#94a3b8'],
+            ] as const
+          ).map(([label, count, color]) =>
+            count > 0 ? (
+              <button
+                key={label}
+                type="button"
+                title={`${label}: ${count}`}
+                aria-label={`Filtrar ${label}: ${count}`}
+                className="h-full transition hover:opacity-90"
+                style={{
+                  width: `${Math.max(4, (count / Math.max(1, summary.open)) * 100)}%`,
+                  backgroundColor: color,
+                }}
+                onClick={() =>
+                  setPriorityFilter(
+                    label === 'Sin cobertura'
+                      ? priorityFilter === 'none'
+                        ? 'all'
+                        : 'none'
+                      : priorityFilter === label
+                        ? 'all'
+                        : label,
+                  )
+                }
+              />
+            ) : null,
+          )}
+        </div>
+        <div className="mt-2 flex flex-wrap gap-3 text-xs">
+          {(
+            [
+              ['Alto', summary.byPriority.Alto, 'text-red-700'],
+              ['Medio', summary.byPriority.Medio, 'text-amber-700'],
+              ['Bajo', summary.byPriority.Bajo, 'text-emerald-700'],
+              ['Sin cobertura', summary.byPriority.none, 'text-slate-500'],
+            ] as const
+          ).map(([label, count, tone]) => (
+            <span key={label} className={`font-semibold ${tone}`}>
+              {label === 'Alto' ? 'Alta' : label === 'Medio' ? 'Media' : label === 'Bajo' ? 'Baja' : label}:{' '}
+              {count}
+            </span>
+          ))}
+        </div>
+        {summary.zones.length > 0 ? (
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {summary.zones.map((z) => (
+              <li
+                key={z.name}
+                className="flex items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-xs"
+              >
+                <span className="min-w-0 truncate font-semibold text-slate-800" title={z.name}>
+                  {z.name}
+                </span>
+                <span className="shrink-0 text-slate-600">
+                  {z.total} · <span className="font-bold text-red-700">{z.alto} críticos</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </section>
       {loadError ? (
         <p
@@ -175,8 +318,8 @@ export function CraDashboard() {
           <div className="border-b border-slate-200 bg-slate-50 p-4">
             <div className="flex items-center justify-between gap-2">
               <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
-                <Inbox className="h-4 w-4 text-mg-800" aria-hidden />
-                Bandeja de reportes
+                <BellRing className="h-4 w-4 text-mg-800" aria-hidden />
+                Bandeja por impacto
               </h2>
               <span className="rounded-full bg-mg-900 px-2.5 py-0.5 text-xs font-bold text-white">
                 {filtered.length}
@@ -194,8 +337,8 @@ export function CraDashboard() {
                 label="Prioridad"
                 value={priorityFilter}
                 onChange={setPriorityFilter}
-                options={['all', 'Alto', 'Medio', 'Bajo']}
-                format={(v) => priorityStyle(v).label}
+                options={['all', 'Alto', 'Medio', 'Bajo', 'none']}
+                format={(v) => (v === 'none' ? 'Sin cobertura' : priorityStyle(v).label)}
               />
               <Filter
                 label="Categoría"
@@ -404,11 +547,13 @@ function Stat({
   tone,
   label,
   value,
+  hint,
 }: {
   icon: LucideIcon;
   tone: string;
   label: string;
   value: string;
+  hint?: string;
 }) {
   return (
     <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -418,6 +563,7 @@ function Stat({
       <div className="min-w-0">
         <p className="truncate text-xs font-medium text-slate-500">{label}</p>
         <p className="text-2xl font-black text-slate-900">{value}</p>
+        {hint ? <p className="truncate text-[11px] text-slate-400">{hint}</p> : null}
       </div>
     </div>
   );
