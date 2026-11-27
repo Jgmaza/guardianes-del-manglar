@@ -44,6 +44,35 @@ export function priorityStyle(priority: string | null | undefined): PriorityStyl
   return (priority && PRIORITY_STYLES[priority]) || NO_PRIORITY;
 }
 
+/** Lower = more urgent for CRA triage (matches Dashboard Manglar sort). */
+export function impactRank(report: {
+  priorityHint?: string | null;
+  status: string;
+  hasPreliminaryAlert?: boolean;
+}): number {
+  const pri =
+    report.priorityHint === 'Alto'
+      ? 0
+      : report.priorityHint === 'Medio'
+        ? 1
+        : report.priorityHint === 'Bajo'
+          ? 2
+          : 3;
+  const open =
+    report.status === 'accepted' || report.status === 'rejected'
+      ? 10
+      : report.hasPreliminaryAlert || report.status === 'alerted'
+        ? 0
+        : report.status === 'under_review'
+          ? 1
+          : 2;
+  return pri * 10 + open;
+}
+
+export function isOpenReport(status: string): boolean {
+  return status !== 'accepted' && status !== 'rejected';
+}
+
 export function timeAgo(iso: string, now: number = Date.now()): string {
   const minutes = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60000));
   if (minutes < 60) return `hace ${minutes} min`;
