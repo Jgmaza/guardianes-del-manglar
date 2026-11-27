@@ -135,12 +135,23 @@ export function CraDashboard() {
         />
       </section>
 
-      <GuardianesMap
-        mode="overview"
-        reports={filtered}
-        showCraPolygons
-        showInvemarPolygons
-      />
+      <section className="space-y-2">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h2 className="font-[family-name:var(--font-display)] text-2xl">Mapa de capas</h2>
+            <p className="text-xs text-[var(--muted)]">
+              Activa/desactiva capas arriba del mapa. Los puntos son reportes; los polígonos son
+              contexto oficial (C.R.A. e INVEMAR).
+            </p>
+          </div>
+        </div>
+        <GuardianesMap
+          mode="overview"
+          reports={filtered}
+          showCraPolygons
+          showInvemarPolygons
+        />
+      </section>
 
       <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-3">
