@@ -9,7 +9,7 @@
     "bot": "node bot/twilio-server.js",
     "bot:twilio": "node bot/twilio-server.js",
     "bot:qr": "node bot/index.js",
-    "web": "npx --yes serve . -p 3000",
+    "web": "npx --yes serve . -p 3002",
     "start": "node bot/twilio-server.js",
     "tunnel": "npx --yes cloudflared tunnel --url http://localhost:3001"
   },

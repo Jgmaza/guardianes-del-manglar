@@ -3,9 +3,10 @@ import twilio from "twilio";
 import dotenv from "dotenv";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { handleIncoming } from "../engine.js";
+import { handleIncoming, STEPS } from "../engine.js";
+import { createReport } from "../reports-client.js";
 
-dotenv.config();
+dotenv.config({ path: path.join(path.dirname(fileURLToPath(import.meta.url)), "..", ".env") });
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const {
@@ -14,6 +15,7 @@ const {
   TWILIO_WHATSAPP_FROM,
   PORT = "3001",
   TWILIO_VALIDATE_SIGNATURE = "false",
+  REPORTS_API_URL = "",
 } = process.env;
 
 const required = ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_WHATSAPP_FROM"];
@@ -50,6 +52,19 @@ function splitWhatsAppText(text, maxLen = 1500) {
   return parts;
 }
 
+function appendTracking(reply, created) {
+  const data = created?.data;
+  if (!data?.trackingCode) return reply;
+  return [
+    reply,
+    "",
+    "*Reporte registrado en la API*",
+    `Código de seguimiento: *${data.trackingCode}*`,
+    `Secreto (solo esta vez): \`${data.trackingSecret}\``,
+    "Guárdalos para consultar el estado después.",
+  ].join("\n");
+}
+
 app.get("/", (_req, res) => {
   res.type("text").send(
     "Manglar Alerta · Twilio WhatsApp OK\nWebhook: POST /whatsapp\nHealth: GET /health\n",
@@ -62,10 +77,12 @@ app.get("/health", (_req, res) => {
     channel: "twilio-whatsapp",
     from: TWILIO_WHATSAPP_FROM,
     sessions: sessions.size,
+    reportsApi: Boolean(REPORTS_API_URL),
+    reportsApiUrl: REPORTS_API_URL || null,
   });
 });
 
-app.post("/whatsapp", (req, res) => {
+app.post("/whatsapp", async (req, res) => {
   try {
     if (TWILIO_VALIDATE_SIGNATURE === "true") {
       const signature = req.headers["x-twilio-signature"];
@@ -92,7 +109,26 @@ app.post("/whatsapp", (req, res) => {
     console.log(`← ${from}: ${body || "(vacío)"}`);
 
     const current = sessions.get(from);
-    const { session, reply } = handleIncoming(current, body || "hola");
+    const { session, reply: baseReply } = handleIncoming(current, body || "hola");
+    let reply = baseReply;
+
+    if (session.step === STEPS.DONE && !session.reportCreated) {
+      try {
+        const created = await createReport(session, { from });
+        if (created?.data) {
+          session.reportCreated = true;
+          reply = appendTracking(reply, created);
+          console.log(`✓ reporte API ${created.data.trackingCode}`);
+        } else if (!REPORTS_API_URL) {
+          console.log("REPORTS_API_URL vacío — solo triage");
+        }
+      } catch (err) {
+        console.error("Error creando reporte:", err);
+        reply +=
+          "\n\n_No pude registrar el reporte en la API ahora. La orientación de arriba sigue válida._";
+      }
+    }
+
     sessions.set(from, session);
 
     const twiml = new MessagingResponse();
@@ -119,13 +155,14 @@ app.listen(Number(PORT), () => {
   console.log(`Local:    http://localhost:${PORT}`);
   console.log(`Webhook:  http://localhost:${PORT}/whatsapp`);
   console.log(`From:     ${TWILIO_WHATSAPP_FROM}`);
+  console.log(
+    `Reports:  ${REPORTS_API_URL || "(no configurada — solo triage)"}`,
+  );
   console.log("");
-  console.log("1) Expón el puerto con un túnel, por ejemplo:");
-  console.log(`   npx --yes cloudflared tunnel --url http://localhost:${PORT}`);
-  console.log("2) En Twilio Sandbox → When a message comes in:");
-  console.log("   https://TU-URL-PUBLICA/whatsapp   (método POST)");
-  console.log("3) Únete al sandbox enviando el código join a WhatsApp.");
-  console.log("4) Escribe Hola al número sandbox.\n");
-  console.log(`Credenciales cargadas desde: ${path.resolve(__dirname, "..", ".env")}`);
-  console.log("Tu WhatsApp personal NO se vincula (no hay QR).\n");
+  console.log("Para POST live a la API:");
+  console.log("  1) En otra terminal: pnpm --filter @guardianes/web dev");
+  console.log("  2) En .env: REPORTS_API_URL=http://localhost:3000");
+  console.log("  3) Reinicia este bot");
+  console.log("");
+  console.log(`Credenciales: ${path.resolve(__dirname, "..", ".env")}\n`);
 });

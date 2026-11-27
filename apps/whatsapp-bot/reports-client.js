@@ -35,15 +35,16 @@ export function buildReportPayload(session, opts = {}) {
 
   if (location?.latitude != null && location?.longitude != null) {
     body.location = {
-      latitude: location.latitude,
-      longitude: location.longitude,
+      latitude: Number(location.latitude),
+      longitude: Number(location.longitude),
       accuracyMeters: location.accuracyMeters,
       source: location.source ?? "whatsapp_shared_location",
     };
   } else {
+    // Punto neutro Atlántico cuando aún no hay pin de WhatsApp
     body.location = {
-      latitude: 0,
-      longitude: 0,
+      latitude: 10.9685,
+      longitude: -74.7813,
       source: "unknown",
     };
   }
