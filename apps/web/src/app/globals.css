@@ -22,6 +22,8 @@
   --foreground: #1e293b;
   --muted: #64748b;
   --panel: #ffffff;
+  --font-sans: 'Roboto', system-ui, sans-serif;
+  --font-mono: 'Roboto Mono', ui-monospace, monospace;
 }
 
 html {
