@@ -15,6 +15,10 @@ out
 .env.*.local
 !.env.example
 
+# whatsapp bot session (Baileys)
+apps/whatsapp-bot/bot/auth_info/
+apps/whatsapp-bot/bot/.bot.lock
+
 # tests / coverage
 coverage
 playwright-report
