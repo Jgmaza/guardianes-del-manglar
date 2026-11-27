@@ -40,10 +40,14 @@ function showChoices(opciones, onPick) {
   opciones.forEach((opcion) => {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "choice-btn";
-    btn.innerHTML = opcion.detalle
-      ? `<span class="choice-title">${opcion.label}</span><span class="choice-detail">${opcion.detalle}</span>`
-      : opcion.label;
+    const nivelClass =
+      opcion.id === "ROJO" || opcion.id === "AMARILLO" || opcion.id === "VERDE"
+        ? ` choice-${opcion.id.toLowerCase()}`
+        : opcion.id === "SI"
+          ? " choice-rojo"
+          : "";
+    btn.className = `choice-btn${nivelClass}`;
+    btn.textContent = opcion.label;
     btn.addEventListener("click", () => onPick(opcion));
     grid.appendChild(btn);
   });
@@ -52,35 +56,26 @@ function showChoices(opciones, onPick) {
 }
 
 function renderBotReply(reply) {
-  // En web mostramos la primera parte como burbuja; el resultado final va en tarjeta
-  const lines = reply.split("\n");
-  const isResult = reply.includes("Alerta roja") || reply.includes("Alerta amarilla") || reply.includes("Alerta verde");
+  const isResult =
+    session.step === STEPS.DONE &&
+    (reply.includes("Alerta roja") ||
+      reply.includes("Alerta amarilla") ||
+      reply.includes("Alerta verde"));
 
-  if (isResult && session.step === STEPS.DONE) {
-    const preface = lines.slice(0, 1).join("\n");
-    if (preface.startsWith("Ok:")) addBubble(preface);
+  if (isResult) {
     showResultCard();
     return;
   }
 
-  // Prefacio "Ok: ..." + pregunta: separar en burbujas cortas
-  const chunks = reply.split("\n\n");
-  chunks.forEach((chunk) => {
-    const clean = chunk
-      .replace(/\*/g, "")
-      .replace(/^_/gm, "")
-      .replace(/_$/gm, "")
-      .trim();
-    if (!clean) return;
-    // No mostrar listados numerados en burbuja; van en botones
-    if (/^\d\)/m.test(clean) && clean.includes("\n")) {
-      const question = clean.split("\n")[0];
-      if (question && !/^\d\)/.test(question)) addBubble(question);
-      return;
-    }
-    if (/^\d\)/.test(clean)) return;
-    addBubble(clean);
-  });
+  // Una sola burbuja corta: pregunta (sin listados; van en botones)
+  const clean = reply
+    .replace(/\*/g, "")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l && !/^\d\)/.test(l) && !/^_/i.test(l))
+    .join(" · ");
+
+  if (clean) addBubble(clean);
 }
 
 function showStepChoices() {
@@ -103,6 +98,7 @@ function showResultCard() {
   const result = buildResult(session);
   const card = document.createElement("article");
   card.className = `result-card nivel-${session.nivel.toLowerCase()}`;
+  const showFallback = result.meta.prioridad === "P0";
   card.innerHTML = `
     <div class="result-top">
       <p class="result-kicker">${result.titulo}</p>
@@ -110,12 +106,9 @@ function showResultCard() {
     </div>
     <p class="result-tone">${result.tono}</p>
     <h2>${result.decision.entidad}</h2>
-    <p class="result-block"><span>Contacto</span>${result.decision.contacto}</p>
-    <p class="result-block"><span>Qué hacer</span>${result.decision.accion}</p>
-    <p class="result-block"><span>Evidencia útil</span>${result.evidencia}</p>
-    <p class="result-block"><span>Privacidad</span>${result.privacidadLabel}</p>
-    <p class="result-note">${result.fallback}</p>
-    <p class="result-frame">${result.nota}</p>
+    <a class="result-contact" href="${telOrWaHref(result.decision.contacto)}">${result.decision.contacto}</a>
+    <p class="result-action">${result.decision.accion}</p>
+    ${showFallback ? `<p class="result-note">${result.fallback}</p>` : ""}
   `;
   messagesEl.appendChild(card);
 
@@ -128,17 +121,25 @@ function showResultCard() {
   wa.href = buildWhatsAppUrl(result);
   wa.target = "_blank";
   wa.rel = "noopener noreferrer";
-  wa.textContent = "Abrir en WhatsApp";
+  wa.textContent = "Enviar por WhatsApp";
 
   const again = document.createElement("button");
   again.type = "button";
   again.className = "ghost-btn solid";
-  again.textContent = "Hacer otro reporte";
+  again.textContent = "Otro reporte";
   again.addEventListener("click", startOver);
 
   actions.append(wa, again);
   choicesEl.appendChild(actions);
   messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+/** Extrae el primer teléfono visible para tel:; si no, # */
+function telOrWaHref(contacto) {
+  const digits = String(contacto).match(/(?:\+?\d[\d\s-]{6,}\d)/);
+  if (!digits) return "#";
+  const clean = digits[0].replace(/\D/g, "");
+  return clean ? `tel:${clean}` : "#";
 }
 
 function buildWhatsAppUrl(result) {

@@ -2,82 +2,60 @@
 export const WHATSAPP_NUMBER = "573001112233";
 
 /**
- * Flujo profesional (estilo triage UNGRD + denuncia ANLA):
- * peligro → tipo → urgencia → zona → privacidad → ruta
- * Las reglas de seguridad solo PUEDEN SUBIR la urgencia, nunca bajarla.
+ * Árbol de decisión — Manglar Alerta
+ * Docs: docs/bot/arbol-decision.md + docs/bot/arbol-decision.json
+ *
+ * Orden: peligro → tipo → nivel? → zona → privacidad → ruta (REGLAS)
+ * Seguridad: peligro / keywords / INCENDIO solo SUBEN a ROJO, nunca bajan.
  */
+
+// ---------------------------------------------------------------------------
+// 1) Preguntas del triage (nodos del árbol)
+// ---------------------------------------------------------------------------
 export const MENSAJES = {
   paso_peligro: {
-    texto: "¿Hay peligro ahora mismo? (fuego, caza en curso, gente en riesgo)",
+    texto: "¿Hay peligro ahora?",
     opciones: [
-      { id: "SI", label: "Sí, hay peligro ahora" },
-      { id: "NO", label: "No, puedo seguir con calma" },
+      { id: "SI", label: "Sí, peligro ahora" },
+      { id: "NO", label: "No, con calma" },
     ],
   },
   paso_tipo: {
-    texto: "¿Qué estás viendo?",
+    texto: "¿Qué ves?",
     opciones: [
       { id: "TALA", label: "Cortan árboles" },
       { id: "INCENDIO", label: "Fuego o humo" },
-      { id: "RESIDUOS", label: "Basura o escombros" },
-      { id: "FAUNA", label: "Animales silvestres / caza" },
-      { id: "INVASION", label: "Invasión de terreno o manglar" },
+      { id: "RESIDUOS", label: "Basura / escombros" },
+      { id: "FAUNA", label: "Fauna / caza" },
+      { id: "INVASION", label: "Invasión / manglar" },
     ],
   },
   paso_nivel: {
-    texto: "Nivel de alerta (estilo gestión del riesgo):",
+    texto: "¿Qué tan urgente?",
     opciones: [
-      {
-        id: "ROJO",
-        label: "Rojo — está pasando YA o hay peligro",
-        detalle: "Evento en curso o inminente",
-      },
-      {
-        id: "AMARILLO",
-        label: "Amarillo — ya pasó o se repite",
-        detalle: "Informar, vigilar y radicar",
-      },
-      {
-        id: "VERDE",
-        label: "Verde — limpieza, poda o prevención",
-        detalle: "Trámite o prevención",
-      },
+      { id: "ROJO", label: "Rojo — pasa YA" },
+      { id: "AMARILLO", label: "Amarillo — ya pasó" },
+      { id: "VERDE", label: "Verde — trámite" },
     ],
   },
   paso_zona: {
-    texto: "¿En dónde está pasando?",
+    texto: "¿Dónde?",
     opciones: [
       { id: "BQ", label: "Barranquilla" },
-      { id: "MUN", label: "Otro municipio del Atlántico" },
-      { id: "COSTA", label: "Playa, manglar o zona costera" },
+      { id: "MUN", label: "Otro municipio" },
+      { id: "COSTA", label: "Costa / manglar" },
     ],
   },
   paso_privacidad: {
-    texto: "¿Cómo quieres reportar? (la denuncia puede ser anónima)",
+    texto: "¿Cómo reportas?",
     opciones: [
-      {
-        id: "ANONIMO",
-        label: "Anónimo — sin mis datos",
-        detalle: "Orientación sin pedir nombre",
-      },
-      {
-        id: "IDENTIFICADO",
-        label: "Con mis datos — para seguimiento",
-        detalle: "Útil si quieres radicar o que te contacten",
-      },
+      { id: "ANONIMO", label: "Anónimo" },
+      { id: "IDENTIFICADO", label: "Con mis datos" },
     ],
   },
-  // Compatibilidad con referencias antiguas
-  paso_1_zona: null,
-  paso_2_tipo: null,
-  paso_3_nivel: null,
 };
 
-MENSAJES.paso_1_zona = MENSAJES.paso_zona;
-MENSAJES.paso_2_tipo = MENSAJES.paso_tipo;
-MENSAJES.paso_3_nivel = MENSAJES.paso_nivel;
-
-/** Tipos que por sí solos elevan a Rojo si el usuario no eligió urgencia aún */
+/** Tipos que por sí solos elevan / fuerzan Rojo (saltan paso nivel). */
 export const TIPOS_ALTO_RIESGO = ["INCENDIO"];
 
 /** Palabras que solo pueden SUBIR la urgencia a Rojo */
@@ -100,27 +78,34 @@ export const PALABRAS_PELIGRO = [
   "químico",
 ];
 
+// ---------------------------------------------------------------------------
+// 2) Metadatos de alerta (prioridad ciudadana P0 / P1 / P2)
+// ---------------------------------------------------------------------------
 export const NIVEL_META = {
   ROJO: {
-    titulo: "Alerta roja — actuar ahora",
+    titulo: "Alerta roja",
     prioridad: "P0",
-    tono: "Prioridad máxima. Si hay riesgo para personas o daño en curso, llama de inmediato.",
-    evidencia: "Si puedes sin acercarte: punto de referencia visible. No te expongas.",
+    tono: "Actúa ya. No te expongas.",
+    evidencia: "Punto de referencia, sin acercarte.",
   },
   AMARILLO: {
-    titulo: "Alerta amarilla — denunciar con evidencia",
+    titulo: "Alerta amarilla",
     prioridad: "P1",
-    tono: "Prioridad media. Radica con fotos, fecha y ubicación para que verifiquen.",
-    evidencia: "Fotos o video, dirección o punto de referencia, fecha y hora aproximada.",
+    tono: "Denuncia con fotos y lugar.",
+    evidencia: "Fotos + dirección + hora.",
   },
   VERDE: {
-    titulo: "Alerta verde — trámite o prevención",
+    titulo: "Alerta verde",
     prioridad: "P2",
-    tono: "No es emergencia. Usa el canal administrativo en horario hábil.",
-    evidencia: "Describe el lugar y qué necesitas (limpieza, poda, permiso, inspección).",
+    tono: "Trámite en horario hábil.",
+    evidencia: "Describe el lugar y lo que pides.",
   },
 };
 
+// ---------------------------------------------------------------------------
+// 3) Matriz de ruta: REGLAS[tipo][nivel][zona] → { entidad, contacto, accion }
+//    5 tipos × 3 niveles × 3 zonas = 45 celdas (completa)
+// ---------------------------------------------------------------------------
 export const REGLAS = {
   TALA: {
     ROJO: {
@@ -393,8 +378,10 @@ export const REGLAS = {
   },
 };
 
-export const FALLBACK =
-  "Si no te contestan rápido y hay peligro o delito en curso, llama siempre al 123 (Policía) o al 119 (Bomberos).";
+// ---------------------------------------------------------------------------
+// 4) Pie de mensaje / marco institucional
+// ---------------------------------------------------------------------------
+export const FALLBACK = "Si no contestan y hay peligro: 123 o 119.";
 
 export const NOTA_MARCO =
-  "Triage inspirado en niveles de alerta de gestión del riesgo (UNGRD) y denuncia ambiental (ANLA / Ley 1333). El bot orienta; la autoridad competente verifica.";
+  "El bot orienta; la autoridad verifica.";

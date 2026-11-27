@@ -1,0 +1,77 @@
+{
+  "version": "1.1",
+  "name": "Manglar Alerta — árbol de decisión",
+  "implementation": {
+    "mensajes": "apps/whatsapp-bot/data.js#MENSAJES",
+    "reglas": "apps/whatsapp-bot/data.js#REGLAS",
+    "engine": "apps/whatsapp-bot/engine.js"
+  },
+  "flow": [
+    "peligro",
+    "tipo",
+    "nivel",
+    "zona",
+    "privacidad",
+    "ruta"
+  ],
+  "notes": {
+    "nivelOpcional": "Se omite si peligro=SI o el motor ya forzó ROJO (p. ej. INCENDIO).",
+    "safety": "Las señales de peligro solo SUBEN urgencia a ROJO; nunca bajan.",
+    "matrixCells": 45,
+    "matrixComplete": true
+  },
+  "steps": {
+    "peligro": {
+      "prompt": "¿Hay peligro ahora mismo? (fuego, caza en curso, gente en riesgo)",
+      "options": [
+        { "id": "SI", "label": "Sí, hay peligro ahora", "forcesNivel": "ROJO", "skipNivel": true },
+        { "id": "NO", "label": "No, puedo seguir con calma" }
+      ]
+    },
+    "tipo": {
+      "prompt": "¿Qué estás viendo?",
+      "options": [
+        { "id": "TALA", "label": "Cortan árboles" },
+        { "id": "INCENDIO", "label": "Fuego o humo", "forcesNivel": "ROJO", "skipNivel": true },
+        { "id": "RESIDUOS", "label": "Basura o escombros" },
+        { "id": "FAUNA", "label": "Animales silvestres / caza" },
+        { "id": "INVASION", "label": "Invasión de terreno o manglar" }
+      ]
+    },
+    "nivel": {
+      "prompt": "Nivel de alerta (estilo gestión del riesgo):",
+      "options": [
+        { "id": "ROJO", "label": "Rojo — está pasando YA o hay peligro", "prioridad": "P0" },
+        { "id": "AMARILLO", "label": "Amarillo — ya pasó o se repite", "prioridad": "P1" },
+        { "id": "VERDE", "label": "Verde — limpieza, poda o prevención", "prioridad": "P2" }
+      ]
+    },
+    "zona": {
+      "prompt": "¿En dónde está pasando?",
+      "options": [
+        { "id": "BQ", "label": "Barranquilla" },
+        { "id": "MUN", "label": "Otro municipio del Atlántico" },
+        { "id": "COSTA", "label": "Playa, manglar o zona costera" }
+      ]
+    },
+    "privacidad": {
+      "prompt": "¿Cómo quieres reportar? (la denuncia puede ser anónima)",
+      "options": [
+        { "id": "ANONIMO", "label": "Anónimo — sin mis datos" },
+        { "id": "IDENTIFICADO", "label": "Con mis datos — para seguimiento" }
+      ]
+    }
+  },
+  "priorityMap": {
+    "ROJO": "P0",
+    "AMARILLO": "P1",
+    "VERDE": "P2"
+  },
+  "altoRiesgoTipos": ["INCENDIO"],
+  "dimensions": {
+    "tipos": ["TALA", "INCENDIO", "RESIDUOS", "FAUNA", "INVASION"],
+    "niveles": ["ROJO", "AMARILLO", "VERDE"],
+    "zonas": ["BQ", "MUN", "COSTA"]
+  },
+  "rutaLookup": "REGLAS[tipo][nivel][zona] → { entidad, contacto, accion }"
+}
