@@ -349,7 +349,7 @@ export function CraDashboard() {
 
       {detailOpen && selected ? (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/45 p-0 sm:items-center sm:p-6"
+          className="fixed inset-0 z-[2000] flex items-end justify-center bg-slate-950/45 p-0 sm:items-center sm:p-6"
           role="presentation"
           onClick={closeDetail}
         >
