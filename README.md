@@ -147,6 +147,8 @@ pnpm test:e2e   # requiere: pnpm --filter @guardianes/web exec playwright instal
 | [ARCHITECTURE](docs/ARCHITECTURE.md) | Arquitectura |
 | [DOMAIN_MODEL](docs/DOMAIN_MODEL.md) | Dominio |
 | [DECISIONS](docs/DECISIONS.md) | Decisiones |
+| [ONBOARDING](docs/ONBOARDING.md) | Arranque del equipo |
+| [BRANCHES](docs/BRANCHES.md) | Ramas: `main` ← `dev` ← `issue/…` |
 | [CONTRIBUTING](docs/CONTRIBUTING.md) | Contribución |
 | [ROADMAP](docs/ROADMAP.md) | Fases |
 | [INTEGRATIONS](docs/INTEGRATIONS.md) | Integraciones |

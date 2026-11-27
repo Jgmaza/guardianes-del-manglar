@@ -7,14 +7,13 @@
 ## 1. Cómo clonar el repositorio
 
 ```bash
-# Cuando exista el remoto (PENDING):
-git clone <URL_DEL_REPO>
-cd <nombre-carpeta-repo>
+git clone https://github.com/Jgmaza/guardianes-del-manglar.git
+cd guardianes-del-manglar
+git checkout dev && git pull
 ```
 
-En el entorno local del equipo, la raíz Git es:
-
-`ManglarHack/apps/`
+Onboarding corto: [`ONBOARDING.md`](ONBOARDING.md).  
+Ramas: [`BRANCHES.md`](BRANCHES.md) (mismo método que el juego: `main` ← `dev` ← `issue/<n>-slug`).
 
 No commitear la carpeta padre `ManglarHack/docs/` (notas personales / KMZ de trabajo) dentro de este repositorio salvo decisión explícita sobre `data/` (ver DECISIONS X7).
 
@@ -32,18 +31,16 @@ Detalle: [`INSTALL.md`](INSTALL.md). **Nunca** subir secretos reales.
 
 ---
 
-## 3. Convenciones de ramas `PROPOSED`
+## 3. Convenciones de ramas
 
 | Rama | Uso |
 |------|-----|
-| `main` | Estable; protegida cuando haya remoto |
-| `docs/*` | Solo documentación |
-| `feat/*` | Funcionalidad nueva |
-| `fix/*` | Corrección |
-| `chore/*` | Tooling, deps, scaffold |
-| `spike/*` | Experimentos descartables |
+| `main` | Estable; solo Jose via PR `dev` → `main` |
+| `dev` | Integración; solo via PR desde `issue/...` |
+| `issue/<n>-slug` | Trabajo de un issue (sale de `dev`) |
+| `work/<persona>` | Rama personal opcional |
 
-Ejemplos: `docs/project-context`, `feat/report-capture`, `chore/monorepo-scaffold`.
+Detalle y comandos: [`BRANCHES.md`](BRANCHES.md).
 
 ---
 
