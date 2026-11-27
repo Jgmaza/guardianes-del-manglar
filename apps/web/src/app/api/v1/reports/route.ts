@@ -16,6 +16,13 @@ export async function GET() {
     meta: {
       count: data.length,
       persistence: service.persistenceEnabled ? 'supabase' : 'memory',
+      env: {
+        hasUrl: Boolean(process.env['SUPABASE_URL'] || process.env['NEXT_PUBLIC_SUPABASE_URL']),
+        hasAnon: Boolean(process.env['SUPABASE_ANON_KEY'] || process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']),
+        enable: process.env['NEXT_PUBLIC_ENABLE_SUPABASE'] ?? null,
+        hasService: Boolean(process.env['SUPABASE_SERVICE_ROLE_KEY']),
+        reportsPersistence: process.env['REPORTS_PERSISTENCE'] ?? null,
+      },
       note: 'Geo fields (priorityHint, zone, species) filled when PostGIS match runs at create time.',
     },
   });

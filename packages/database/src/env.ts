@@ -1,6 +1,8 @@
 /**
- * Reads Supabase public config from environment.
- * Never reads or exports the service role key to client bundles.
+ * Reads Supabase config from environment.
+ * Prefer server-only names (SUPABASE_URL / SUPABASE_ANON_KEY) so Next.js cannot
+ * bake empty NEXT_PUBLIC_* literals into the production server bundle.
+ * Never exports the service role key to client bundles.
  */
 
 export interface SupabasePublicConfig {
@@ -8,11 +10,18 @@ export interface SupabasePublicConfig {
   anonKey: string;
 }
 
+function readEnv(env: NodeJS.ProcessEnv, key: string): string {
+  // Dynamic access avoids Next.js build-time inlining of NEXT_PUBLIC_* empties.
+  return String(env[key] ?? '').trim();
+}
+
 export function getSupabasePublicConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): SupabasePublicConfig | null {
-  const url = env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? '';
-  const anonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ?? '';
+  const url =
+    readEnv(env, 'SUPABASE_URL') || readEnv(env, 'NEXT_PUBLIC_SUPABASE_URL');
+  const anonKey =
+    readEnv(env, 'SUPABASE_ANON_KEY') || readEnv(env, 'NEXT_PUBLIC_SUPABASE_ANON_KEY');
 
   if (!url || !anonKey) {
     return null;
@@ -22,9 +31,6 @@ export function getSupabasePublicConfig(
 }
 
 export function isSupabaseConfigured(env: NodeJS.ProcessEnv = process.env): boolean {
-  if (env.NEXT_PUBLIC_ENABLE_SUPABASE === 'false') {
-    return false;
-  }
   return getSupabasePublicConfig(env) !== null;
 }
 
@@ -34,40 +40,30 @@ export function isSupabaseConfigured(env: NodeJS.ProcessEnv = process.env): bool
 export function isSupabaseServiceConfigured(
   env: NodeJS.ProcessEnv = process.env,
 ): boolean {
-  if (env.NEXT_PUBLIC_ENABLE_SUPABASE === 'false') {
-    return false;
-  }
-  const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim() ?? '';
+  const serviceKey = readEnv(env, 'SUPABASE_SERVICE_ROLE_KEY');
   return isSupabaseConfigured(env) && serviceKey.length > 0;
 }
 
 /**
- * Reports API may persist when Supabase public config is on.
- * Prefers service role; falls back to anon if tables have no RLS (hackathon).
- * Force memory with REPORTS_PERSISTENCE=memory.
+ * Reports API persists to Supabase when URL + anon (or service) keys exist.
+ * Force memory only with REPORTS_PERSISTENCE=memory.
+ * NEXT_PUBLIC_ENABLE_SUPABASE=false is ignored for reports (Vercel builds often
+ * baked that flag empty/false and left production stuck on an empty memory store).
  */
 export function isReportsPersistenceConfigured(
   env: NodeJS.ProcessEnv = process.env,
 ): boolean {
-  if (env.REPORTS_PERSISTENCE === 'memory') {
-    return false;
-  }
-  if (env.NEXT_PUBLIC_ENABLE_SUPABASE === 'false') {
+  if (readEnv(env, 'REPORTS_PERSISTENCE') === 'memory') {
     return false;
   }
   return isSupabaseConfigured(env);
 }
 
 /**
- * Geo RPC (point-in-polygon) can run even when report persistence is memory-only,
- * as long as service role credentials are present.
+ * Geo RPC (point-in-polygon) needs the service role for PostGIS RPC.
  */
 export function isSupabaseGeoConfigured(
   env: NodeJS.ProcessEnv = process.env,
 ): boolean {
-  if (env.NEXT_PUBLIC_ENABLE_SUPABASE === 'false') {
-    return false;
-  }
-  const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim() ?? '';
-  return isSupabaseConfigured(env) && serviceKey.length > 0;
+  return isSupabaseServiceConfigured(env);
 }
