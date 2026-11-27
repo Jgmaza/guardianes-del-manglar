@@ -13,8 +13,8 @@ test('citizen report page loads wizard steps', async ({ page }) => {
   await expect(page.getByText('Captura una evidencia')).toBeVisible();
 });
 
-test('cra dashboard loads fixture-aware panel', async ({ page }) => {
+test('cra dashboard loads report inbox', async ({ page }) => {
   await page.goto('/cra');
   await expect(page.getByRole('heading', { name: 'Panel C.R.A.' })).toBeVisible();
-  await expect(page.getByText(/fixtures de desarrollo/i)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Bandeja de reportes' })).toBeVisible();
 });

@@ -1,6 +1,19 @@
 'use client';
 
 import { Button } from '@guardianes/ui';
+import {
+  Clock3,
+  Eye,
+  FileText,
+  Inbox,
+  Info,
+  MapPin,
+  RefreshCw,
+  Siren,
+  Timer,
+  TriangleAlert,
+  type LucideIcon,
+} from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -10,6 +23,7 @@ import {
   patchReportStatus,
   type DashboardReport,
 } from '@/lib/api-client';
+import { priorityStyle, statusLabel, statusTone, timeAgo } from '@/lib/report-labels';
 
 const GuardianesMap = dynamic(
   () => import('@/components/map/GuardianesMap').then((m) => m.GuardianesMap),
@@ -28,7 +42,7 @@ const STATUSES = [
 
 export function CraDashboard() {
   const [reports, setReports] = useState<DashboardReport[]>([]);
-  const [dataSource, setDataSource] = useState<'api' | 'fixture'>('fixture');
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -42,13 +56,15 @@ export function CraDashboard() {
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const { reports: rows, source } = await fetchDashboardReports();
+      const rows = await fetchDashboardReports();
       setReports(rows);
-      setDataSource(source);
+      setLoadError(null);
       setSelected((prev) => {
         if (!prev) return rows[0] ?? null;
         return rows.find((r) => r.id === prev.id) ?? rows[0] ?? null;
       });
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'No se pudieron cargar los reportes');
     } finally {
       setLoading(false);
     }
@@ -59,14 +75,8 @@ export function CraDashboard() {
   }, [refresh]);
 
   useEffect(() => {
-    if (!selected || selected.id.startsWith('fixture-')) {
-      setEvents([
-        {
-          type: 'fixture_note',
-          createdAt: new Date().toISOString(),
-          payload: { note: 'Historial de ejemplo — no es un expediente real.' },
-        },
-      ]);
+    if (!selected) {
+      setEvents([]);
       return;
     }
     void fetchReportEvents(selected.id)
@@ -86,6 +96,8 @@ export function CraDashboard() {
   const summary = useMemo(() => {
     return {
       total: reports.length,
+      pending: reports.filter((r) => r.status === 'submitted' || r.status === 'geo_processed')
+        .length,
       underReview: reports.filter((r) => r.status === 'under_review').length,
       alerted: reports.filter((r) => r.hasPreliminaryAlert || r.status === 'alerted').length,
     };
@@ -98,226 +110,314 @@ export function CraDashboard() {
     return ['all', ...new Set(codes)];
   }, [reports]);
 
-  const isFixtureSelected = selected?.id.startsWith('fixture-') ?? false;
+  const runAction = async (action: () => Promise<string>) => {
+    try {
+      setMessage(await action());
+      await refresh();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'La acción falló');
+    }
+  };
+
+  const now = Date.now();
 
   return (
-    <div className="space-y-6">
-      <section className="grid gap-3 md:grid-cols-4">
-        <Stat label="Reportes (vista)" value={loading ? '…' : String(summary.total)} />
-        <Stat label="En revisión" value={String(summary.underReview)} />
-        <Stat label="Con alerta" value={String(summary.alerted)} />
-        <Stat label="Fuente" value={dataSource === 'api' ? 'API live' : 'FIXTURE'} />
-      </section>
-      <p className="text-xs text-amber-100">
-        {dataSource === 'api'
-          ? 'Lista desde GET /api/v1/reports. Prioridad/zona/especie vienen del join PostGIS (C.R.A. + INVEMAR) al crear.'
-          : 'Sin reportes en API todavía — mostrando fixtures de demo. Crea uno en /reportar (punto con cobertura) para ver el join.'}
-      </p>
-
-      <section className="grid gap-3 rounded-2xl border border-white/10 bg-[var(--panel)] p-4 md:grid-cols-3">
-        <Filter
-          label="Estado"
-          value={statusFilter}
-          onChange={setStatusFilter}
-          options={['all', ...STATUSES]}
+    <div className="space-y-5">
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Stat
+          icon={FileText}
+          tone="bg-mg-50 text-mg-800"
+          label="Reportes"
+          value={loading ? '…' : String(summary.total)}
         />
-        <Filter
-          label="Prioridad (hint fixture/capa)"
-          value={priorityFilter}
-          onChange={setPriorityFilter}
-          options={['all', 'Alto', 'Medio', 'Bajo']}
+        <Stat
+          icon={Timer}
+          tone="bg-amber-100 text-amber-700"
+          label="En revisión"
+          value={String(summary.underReview)}
         />
-        <Filter
-          label="Categoría"
-          value={categoryFilter}
-          onChange={setCategoryFilter}
-          options={categoryOptions}
+        <Stat
+          icon={TriangleAlert}
+          tone="bg-red-100 text-red-600"
+          label="Con alerta"
+          value={String(summary.alerted)}
+        />
+        <Stat
+          icon={Inbox}
+          tone="bg-sky-100 text-sky-700"
+          label="Sin revisar"
+          value={String(summary.pending)}
         />
       </section>
+      {loadError ? (
+        <p
+          className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800"
+          role="alert"
+        >
+          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+          {loadError}
+        </p>
+      ) : null}
 
-      <section className="space-y-2">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h2 className="font-[family-name:var(--font-display)] text-2xl">Mapa de capas</h2>
-            <p className="text-xs text-[var(--muted)]">
-              Activa/desactiva capas arriba del mapa. Los puntos son reportes; los polígonos son
-              contexto oficial (C.R.A. e INVEMAR).
-            </p>
+      <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
+        <section className="min-w-0">
+          <GuardianesMap
+            mode="overview"
+            reports={filtered}
+            showCraPolygons
+            showInvemarPolygons
+            mapClassName="h-[360px] lg:h-[560px]"
+          />
+        </section>
+
+        <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:max-h-[760px]">
+          <div className="border-b border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
+                <Inbox className="h-4 w-4 text-mg-800" aria-hidden />
+                Bandeja de reportes
+              </h2>
+              <span className="rounded-full bg-mg-900 px-2.5 py-0.5 text-xs font-bold text-white">
+                {filtered.length}
+              </span>
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              <Filter
+                label="Estado"
+                value={statusFilter}
+                onChange={setStatusFilter}
+                options={['all', ...STATUSES]}
+                format={statusLabel}
+              />
+              <Filter
+                label="Prioridad"
+                value={priorityFilter}
+                onChange={setPriorityFilter}
+                options={['all', 'Alto', 'Medio', 'Bajo']}
+                format={(v) => priorityStyle(v).label}
+              />
+              <Filter
+                label="Categoría"
+                value={categoryFilter}
+                onChange={setCategoryFilter}
+                options={categoryOptions}
+              />
+            </div>
           </div>
-        </div>
-        <GuardianesMap
-          mode="overview"
-          reports={filtered}
-          showCraPolygons
-          showInvemarPolygons
-        />
-      </section>
 
-      <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="space-y-3">
-          {filtered.length === 0 && !loading ? (
-            <p className="rounded-xl border border-white/10 bg-black/20 px-4 py-6 text-sm text-[var(--muted)]">
-              No hay reportes con estos filtros.
-            </p>
-          ) : null}
-          {filtered.map((report) => (
-            <button
-              key={report.id}
-              type="button"
-              onClick={() => setSelected(report)}
-              className={`w-full rounded-xl border px-4 py-3 text-left transition ${
-                selected?.id === report.id
-                  ? 'border-[var(--gdm-tide)] bg-white/10'
-                  : 'border-white/10 bg-black/20 hover:bg-white/5'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <strong>{report.trackingCode}</strong>
-                <span className="text-xs text-[var(--muted)]">{report.status}</span>
-              </div>
-              <p className="mt-1 text-sm text-[var(--muted)]">{report.description}</p>
-              <p className="mt-1 text-xs text-[var(--muted)]">
-                Prioridad: {report.priorityHint ?? '—'} · especie: {report.dominantSpecies ?? '—'} ·
-                evidencias: {report.evidenceCount}
+          <div className="flex-1 space-y-3 overflow-y-auto bg-slate-50/60 p-3">
+            {filtered.length === 0 && !loading ? (
+              <p className="rounded-xl border-2 border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500">
+                {reports.length === 0
+                  ? 'Aún no hay reportes ciudadanos. Los que lleguen desde la app o WhatsApp aparecerán aquí.'
+                  : 'No hay reportes con estos filtros.'}
               </p>
-            </button>
-          ))}
-        </div>
+            ) : null}
+            {filtered.map((report) => {
+              const pri = priorityStyle(report.priorityHint);
+              const active = selected?.id === report.id;
+              return (
+                <button
+                  key={report.id}
+                  type="button"
+                  onClick={() => {
+                    setSelected(report);
+                    if (window.innerWidth < 1024) {
+                      document.getElementById('detalle-reporte')?.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                  aria-pressed={active}
+                  style={{ borderLeftColor: pri.color }}
+                  className={`w-full rounded-xl border border-l-4 bg-white p-3 text-left shadow-sm transition hover:shadow-md ${
+                    active ? 'border-mg-600 ring-2 ring-mg-400/40' : 'border-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`rounded border px-2 py-0.5 text-[11px] font-bold ${pri.badge}`}>
+                      {pri.label}
+                    </span>
+                    <span className="flex items-center gap-1 text-xs text-slate-500">
+                      <Clock3 className="h-3 w-3" aria-hidden />
+                      {timeAgo(report.receivedAt, now)}
+                    </span>
+                  </div>
+                  <p className="mt-2 font-[family-name:var(--font-mono)] text-sm font-bold text-slate-900">
+                    {report.trackingCode}
+                  </p>
+                  <p className="mt-1 line-clamp-2 text-sm text-slate-600">{report.description}</p>
+                  <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
+                    {report.categoryLabel ?? report.categoryCode ? (
+                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-700">
+                        {report.categoryLabel ?? report.categoryCode}
+                      </span>
+                    ) : null}
+                    {report.dominantSpecies ? (
+                      <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-emerald-800">
+                        {report.dominantSpecies}
+                      </span>
+                    ) : null}
+                    <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-700">
+                      {report.evidenceCount} evidencia(s)
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between gap-2 border-t border-slate-100 pt-2">
+                    <span className="flex items-center gap-1 font-[family-name:var(--font-mono)] text-[11px] text-slate-500">
+                      <MapPin className="h-3 w-3" aria-hidden />
+                      {report.location.latitude.toFixed(4)}, {report.location.longitude.toFixed(4)}
+                    </span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${statusTone(report.status)}`}
+                    >
+                      {statusLabel(report.status)}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      </div>
 
-        {selected ? (
-          <aside className="space-y-4 rounded-2xl border border-white/10 bg-[var(--panel)] p-4">
-            <h2 className="font-[family-name:var(--font-display)] text-2xl">
-              {selected.trackingCode}
-            </h2>
-            <p className="text-sm">{selected.description}</p>
-            <dl className="grid grid-cols-2 gap-2 text-sm">
-              <div>
-                <dt className="text-[var(--muted)]">Canal</dt>
-                <dd>{selected.channel}</dd>
-              </div>
-              <div>
-                <dt className="text-[var(--muted)]">Categoría</dt>
-                <dd>{selected.categoryLabel ?? selected.categoryCode ?? '—'}</dd>
-              </div>
-              <div>
-                <dt className="text-[var(--muted)]">Observado</dt>
-                <dd>{new Date(selected.observedAt).toLocaleString('es-CO')}</dd>
-              </div>
-              <div>
-                <dt className="text-[var(--muted)]">Recibido</dt>
-                <dd>{new Date(selected.receivedAt).toLocaleString('es-CO')}</dd>
-              </div>
-              <div>
-                <dt className="text-[var(--muted)]">Ubicación</dt>
-                <dd>
-                  {selected.location.latitude.toFixed(4)}, {selected.location.longitude.toFixed(4)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[var(--muted)]">Fuente ubicación</dt>
-                <dd>{selected.location.source}</dd>
-              </div>
-              <div>
-                <dt className="text-[var(--muted)]">Prioridad C.R.A.</dt>
-                <dd>{selected.priorityHint ?? 'sin cobertura'}</dd>
-              </div>
-              <div>
-                <dt className="text-[var(--muted)]">Zona / UH</dt>
-                <dd>
-                  {selected.zoneHydro ?? '—'}
-                  {selected.unitHydro ? ` / ${selected.unitHydro}` : ''}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[var(--muted)]">Especie (INVEMAR)</dt>
-                <dd>{selected.dominantSpecies ?? 'sin cobertura manglar'}</dd>
-              </div>
-              <div>
-                <dt className="text-[var(--muted)]">Zonif. manejo</dt>
-                <dd>
-                  {selected.managementZone ?? '—'}
-                  {selected.locality ? ` · ${selected.locality}` : ''}
-                </dd>
-              </div>
+      {selected ? (
+        <section
+          id="detalle-reporte"
+          className="grid scroll-mt-4 gap-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:grid-cols-[1.4fr_1fr]"
+        >
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="font-[family-name:var(--font-mono)] text-xl font-bold text-slate-900">
+                {selected.trackingCode}
+              </h2>
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${statusTone(selected.status)}`}
+              >
+                {statusLabel(selected.status)}
+              </span>
+              <span
+                className={`rounded border px-2 py-0.5 text-xs font-bold ${priorityStyle(selected.priorityHint).badge}`}
+              >
+                Prioridad {priorityStyle(selected.priorityHint).label}
+              </span>
+            </div>
+            <p className="mt-2 text-sm text-slate-700">{selected.description}</p>
+            <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm md:grid-cols-3">
+              {(
+                [
+                  ['Canal', selected.channel],
+                  ['Categoría', selected.categoryLabel ?? selected.categoryCode ?? '—'],
+                  ['Observado', new Date(selected.observedAt).toLocaleString('es-CO')],
+                  ['Recibido', new Date(selected.receivedAt).toLocaleString('es-CO')],
+                  [
+                    'Ubicación',
+                    `${selected.location.latitude.toFixed(4)}, ${selected.location.longitude.toFixed(4)}`,
+                  ],
+                  ['Fuente ubicación', selected.location.source],
+                  ['Prioridad C.R.A.', selected.priorityHint ?? 'sin cobertura'],
+                  [
+                    'Zona / UH',
+                    `${selected.zoneHydro ?? '—'}${selected.unitHydro ? ` / ${selected.unitHydro}` : ''}`,
+                  ],
+                  ['Especie (INVEMAR)', selected.dominantSpecies ?? 'sin cobertura manglar'],
+                  [
+                    'Zonif. manejo',
+                    `${selected.managementZone ?? '—'}${selected.locality ? ` · ${selected.locality}` : ''}`,
+                  ],
+                ] as const
+              ).map(([label, value]) => (
+                <div key={label}>
+                  <dt className="text-xs text-slate-500">{label}</dt>
+                  <dd className="font-medium text-slate-900">{value}</dd>
+                </div>
+              ))}
             </dl>
-
-            <div>
-              <h3 className="text-sm font-semibold">Evidencias</h3>
-              <p className="text-sm text-[var(--muted)]">
-                Conteos: {selected.evidenceCount}. Metadatos EXIF/hash se muestran cuando el reporte
-                proviene de la API real (no del fixture).
+            <div className="mt-4 rounded-lg bg-slate-50 p-3">
+              <h3 className="text-sm font-bold text-slate-900">Evidencias</h3>
+              <p className="text-sm text-slate-600">
+                {selected.evidenceCount} evidencia(s) adjunta(s).
               </p>
             </div>
+          </div>
 
+          <div className="flex flex-col gap-4">
             <div>
-              <h3 className="text-sm font-semibold">Historial / verificaciones</h3>
-              <ul className="mt-2 space-y-1 text-xs text-[var(--muted)]">
+              <h3 className="text-sm font-bold text-slate-900">Historial / verificaciones</h3>
+              <ol className="mt-2 space-y-2 border-l-2 border-mg-100 pl-4 text-xs text-slate-600">
                 {events.map((e, idx) => (
-                  <li key={`${e.type}-${idx}`}>
-                    {e.type} · {new Date(e.createdAt).toLocaleString('es-CO')}
+                  <li key={`${e.type}-${idx}`} className="relative">
+                    <span className="absolute -left-[21px] top-1 h-2 w-2 rounded-full bg-mg-600" />
+                    <span className="font-semibold text-slate-800">{statusLabel(e.type)}</span> ·{' '}
+                    {new Date(e.createdAt).toLocaleString('es-CO')}
                   </li>
                 ))}
-              </ul>
+              </ol>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="mt-auto flex flex-wrap gap-2">
               <Button
-                onClick={async () => {
-                  if (isFixtureSelected) {
-                    setMessage('Fixture: el cambio de estado se simula solo en esta sesión UI.');
-                    setReports((prev) =>
-                      prev.map((r) =>
-                        r.id === selected.id ? { ...r, status: 'under_review' } : r,
-                      ),
-                    );
-                    setSelected({ ...selected, status: 'under_review' });
-                    return;
-                  }
-                  await patchReportStatus(selected.id, 'under_review', 'triage CRA');
-                  setMessage('Estado actualizado en API.');
-                  await refresh();
-                }}
+                onClick={() =>
+                  runAction(async () => {
+                    await patchReportStatus(selected.id, 'under_review', 'triage CRA');
+                    return 'Reporte marcado en revisión.';
+                  })
+                }
               >
+                <Eye className="h-4 w-4" aria-hidden />
                 Marcar en revisión
               </Button>
               <Button
                 variant="secondary"
-                onClick={async () => {
-                  if (isFixtureSelected) {
-                    setMessage('Fixture: se marca alerta preliminar solo en UI.');
-                    const next = { ...selected, hasPreliminaryAlert: true, status: 'alerted' };
-                    setSelected(next);
-                    setReports((prev) => prev.map((r) => (r.id === selected.id ? next : r)));
-                    return;
-                  }
-                  await createAlert(
-                    selected.id,
-                    'Alerta preliminar',
-                    'Revisión inicial desde dashboard C.R.A.',
-                  );
-                  setMessage('Alerta preliminar creada (no es autorización).');
-                  await refresh();
-                }}
+                className="border-red-600! text-red-700! hover:bg-red-50!"
+                onClick={() =>
+                  runAction(async () => {
+                    await createAlert(
+                      selected.id,
+                      'Alerta preliminar',
+                      'Revisión inicial desde dashboard C.R.A.',
+                    );
+                    return 'Alerta preliminar creada (no es autorización).';
+                  })
+                }
               >
+                <Siren className="h-4 w-4" aria-hidden />
                 Crear alerta preliminar
               </Button>
               <Button variant="secondary" onClick={() => void refresh()}>
+                <RefreshCw className="h-4 w-4" aria-hidden />
                 Refrescar
               </Button>
             </div>
-            {message ? <p className="text-xs text-emerald-200">{message}</p> : null}
-          </aside>
-        ) : null}
-      </div>
+            {message ? (
+              <p className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800" role="status">
+                {message}
+              </p>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({
+  icon: Icon,
+  tone,
+  label,
+  value,
+}: {
+  icon: LucideIcon;
+  tone: string;
+  label: string;
+  value: string;
+}) {
   return (
-    <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-      <p className="text-xs uppercase tracking-wide text-[var(--muted)]">{label}</p>
-      <p className="mt-1 font-[family-name:var(--font-display)] text-2xl">{value}</p>
+    <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${tone}`}>
+        <Icon className="h-5 w-5" aria-hidden />
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-xs font-medium text-slate-500">{label}</p>
+        <p className="text-2xl font-black text-slate-900">{value}</p>
+      </div>
     </div>
   );
 }
@@ -327,23 +427,25 @@ function Filter({
   value,
   onChange,
   options,
+  format = (v) => v,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   options: string[];
+  format?: (v: string) => string;
 }) {
   return (
-    <label className="text-sm">
+    <label className="min-w-0 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
       {label}
       <select
-        className="mt-1 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2"
+        className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs font-normal normal-case tracking-normal text-slate-900"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
         {options.map((opt) => (
           <option key={opt} value={opt}>
-            {opt}
+            {opt === 'all' ? 'Todos' : format(opt)}
           </option>
         ))}
       </select>

@@ -2,11 +2,30 @@
 @import '@guardianes/ui/styles.css';
 @import 'leaflet/dist/leaflet.css';
 
+@source '../../../../packages/ui/src';
+
+@theme {
+  --color-mg-950: #072a20;
+  --color-mg-900: #0b3b2c;
+  --color-mg-800: #115740;
+  --color-mg-700: #166a4d;
+  --color-mg-600: #1a8061;
+  --color-mg-500: #10b981;
+  --color-mg-400: #34d399;
+  --color-mg-100: #d1fae5;
+  --color-mg-50: #ecfdf5;
+  --color-app: #eef2f1;
+}
+
 :root {
-  --background: #081510;
-  --foreground: #eef6f1;
-  --muted: #9bb5a8;
-  --panel: rgba(15, 42, 32, 0.72);
+  --background: #eef2f1;
+  --foreground: #1e293b;
+  --muted: #64748b;
+  --panel: #ffffff;
+}
+
+html {
+  --font-display: var(--font-sans);
 }
 
 html,
@@ -16,11 +35,20 @@ body {
 
 body {
   color: var(--foreground);
-  background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(42, 143, 106, 0.35), transparent 55%),
-    radial-gradient(900px 500px at 90% 10%, rgba(215, 196, 163, 0.18), transparent 50%),
-    linear-gradient(160deg, #06110d 0%, #0d241c 45%, #123228 100%);
-  background-attachment: fixed;
+  background: var(--background);
+}
+
+button:focus-visible,
+a:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #f59e0b;
+  outline-offset: 2px;
+}
+
+.leaflet-container {
+  font-family: inherit;
 }
 
 @keyframes rise-in {
@@ -34,13 +62,12 @@ body {
   }
 }
 
-@keyframes tide-shift {
-  0%,
-  100% {
-    background-position: 0% 50%;
+@keyframes pulse-critical {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.6);
   }
-  50% {
-    background-position: 100% 50%;
+  100% {
+    box-shadow: 0 0 0 14px rgba(220, 38, 38, 0);
   }
 }
 
@@ -52,8 +79,14 @@ body {
   animation: rise-in 900ms ease-out 120ms both;
 }
 
-.tide-bar {
-  background: linear-gradient(90deg, #1f6b4a, #2a8f6a, #d7c4a3, #1f6b4a);
-  background-size: 200% 100%;
-  animation: tide-shift 10s ease-in-out infinite;
+.pulse-critical {
+  animation: pulse-critical 1.6s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise,
+  .animate-rise-delay,
+  .pulse-critical {
+    animation: none;
+  }
 }

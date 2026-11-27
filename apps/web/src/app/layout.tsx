@@ -1,17 +1,18 @@
 import type { Metadata, Viewport } from 'next';
-import { Fraunces, Manrope } from 'next/font/google';
+import { Roboto, Roboto_Mono } from 'next/font/google';
 import type { ReactNode } from 'react';
 import { RegisterSW } from '@/components/pwa/RegisterSW';
 import './globals.css';
 
-const display = Fraunces({
+const sans = Roboto({
   subsets: ['latin'],
-  variable: '--font-display',
+  weight: ['400', '500', '700', '900'],
+  variable: '--font-sans',
 });
 
-const sans = Manrope({
+const mono = Roboto_Mono({
   subsets: ['latin'],
-  variable: '--font-sans',
+  variable: '--font-mono',
 });
 
 export const metadata: Metadata = {
@@ -26,15 +27,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#1f6b4a',
+  themeColor: '#0b3b2c',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="es">
-      <body
-        className={`${display.variable} ${sans.variable} font-[family-name:var(--font-sans)] antialiased`}
-      >
+    <html lang="es" className={`${sans.variable} ${mono.variable}`}>
+      <body className="font-[family-name:var(--font-sans)] antialiased">
         <RegisterSW />
         {children}
       </body>
