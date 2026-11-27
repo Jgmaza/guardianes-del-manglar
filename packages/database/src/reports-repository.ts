@@ -6,6 +6,7 @@ import type {
   Report,
   ReportCategory,
   ReportEvent,
+  ReportGeoMatch,
   ReportVerification,
   ReporterReference,
 } from '@guardianes/contracts';
@@ -445,8 +446,8 @@ export class SupabaseReportsRepository {
       }
       if (event.type === 'geo_matched' && event.payload && typeof event.payload === 'object') {
         const payload = event.payload as {
-          cra?: import('@guardianes/contracts').ReportGeoMatch['cra'];
-          invemar?: import('@guardianes/contracts').ReportGeoMatch['invemar'];
+          cra?: ReportGeoMatch['cra'];
+          invemar?: ReportGeoMatch['invemar'];
           matchedAt?: string;
         };
         if (payload.cra && payload.invemar) {
