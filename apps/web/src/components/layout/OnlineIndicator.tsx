@@ -38,9 +38,13 @@ export function OnlineIndicator() {
       <span
         className={`inline-block h-2 w-2 rounded-full ${online ? 'bg-emerald-400' : 'bg-amber-400'}`}
       />
-      <span className="text-emerald-100">
+      <span className="hidden text-emerald-100 sm:inline">
         {online ? 'En línea' : 'Sin conexión'}
         {pending > 0 ? ` · ${pending} pendiente${pending === 1 ? '' : 's'} de sincronizar` : ''}
+      </span>
+      <span className="sr-only">
+        {online ? 'En línea' : 'Sin conexión'}
+        {pending > 0 ? `, ${pending} pendientes de sincronizar` : ''}
       </span>
     </div>
   );

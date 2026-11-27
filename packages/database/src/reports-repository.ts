@@ -423,6 +423,26 @@ export class SupabaseReportsRepository {
     return this.hydrateReportRow(store, data as ReportRow);
   }
 
+  /**
+   * Pull recent reports into the in-memory domain store for the CRA dashboard.
+   * Idempotent merge — already-hydrated ids are skipped.
+   */
+  async hydrateRecent(store: ReportDomainStore, limit = 100): Promise<number> {
+    const { data, error } = await this.client
+      .from('reports')
+      .select('*')
+      .order('received_at', { ascending: false })
+      .limit(limit);
+    if (error) throw new Error(`hydrateRecent: ${error.message}`);
+    let loaded = 0;
+    for (const row of (data ?? []) as ReportRow[]) {
+      if (store.reports.has(row.id)) continue;
+      await this.hydrateReportRow(store, row);
+      loaded += 1;
+    }
+    return loaded;
+  }
+
   private async hydrateReportRow(store: ReportDomainStore, row: ReportRow): Promise<Report> {
     const report = reportFromRow(row);
     store.reports.set(report.id, report);

@@ -105,10 +105,16 @@ export function GuardianesMap({
         mapRef.current = null;
       }
 
+      // Ciénaga Mallorquín / Puerto Colombia — densest INVEMAR + CRA coverage
       const map = L.map(el, {
-        center: [10.95, -74.9],
-        zoom: 9,
+        center: [11.04, -74.87],
+        zoom: mode === 'overview' ? 12 : 11,
         zoomControl: true,
+        maxBounds: [
+          [10.55, -75.4],
+          [11.2, -74.65],
+        ],
+        maxBoundsViscosity: 0.6,
       });
       mapRef.current = map;
 
@@ -200,6 +206,18 @@ export function GuardianesMap({
           });
           invemarGroup.addLayer(invLayer);
           setCounts((c) => ({ ...c, invemar: invJson.features?.length ?? 0 }));
+          try {
+            // Focus the dense corridor: Mallorquín → Puerto Colombia → Pradomar
+            map.fitBounds(
+              L.latLngBounds([
+                [11.005, -74.95],
+                [11.065, -74.82],
+              ]),
+              { padding: [24, 24], maxZoom: 13 },
+            );
+          } catch {
+            /* ignore */
+          }
         } catch {
           /* keep map usable */
         }
@@ -303,12 +321,16 @@ export function GuardianesMap({
       if (layerReports) group.addTo(map);
       else map.removeLayer(group);
 
-      if (mode === 'overview' && reports.length > 0) {
-        const latLngs = reports.map(
-          (r) => [r.location.latitude, r.location.longitude] as [number, number],
-        );
+      if (mode === 'overview') {
         try {
-          map.fitBounds(L.latLngBounds(latLngs), { padding: [40, 40], maxZoom: 12 });
+          if (reports.length > 0) {
+            const latLngs = reports.map(
+              (r) => [r.location.latitude, r.location.longitude] as [number, number],
+            );
+            // Include the mangrove core so a lone Barranquilla pin doesn't zoom out the coast
+            latLngs.push([11.045, -74.86], [11.02, -74.9]);
+            map.fitBounds(L.latLngBounds(latLngs), { padding: [36, 36], maxZoom: 13 });
+          }
         } catch {
           /* ignore */
         }
