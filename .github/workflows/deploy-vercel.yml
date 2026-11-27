@@ -53,7 +53,8 @@ jobs:
           }
           upsert NEXT_PUBLIC_SUPABASE_URL "$NEXT_PUBLIC_SUPABASE_URL"
           upsert NEXT_PUBLIC_SUPABASE_ANON_KEY "$NEXT_PUBLIC_SUPABASE_ANON_KEY"
-          upsert NEXT_PUBLIC_ENABLE_SUPABASE "${NEXT_PUBLIC_ENABLE_SUPABASE:-true}"
+          # Always on for production so the CRA panel can hydrate from Postgres.
+          upsert NEXT_PUBLIC_ENABLE_SUPABASE "true"
           upsert SUPABASE_SERVICE_ROLE_KEY "$SUPABASE_SERVICE_ROLE_KEY"
           upsert NEXT_PUBLIC_APP_NAME "${NEXT_PUBLIC_APP_NAME:-Guardianes del Manglar}"
           upsert NEXT_PUBLIC_APP_URL "${NEXT_PUBLIC_APP_URL:-https://guardianes-del-manglar.vercel.app}"
@@ -64,11 +65,38 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
+      # `vercel pull` redacts Sensitive secrets as [SENSITIVE]; write real values for the build.
+      - name: Materialize server secrets for build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          ENV_FILE=".vercel/.env.production.local"
+          touch "$ENV_FILE"
+          for key in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY NEXT_PUBLIC_ENABLE_SUPABASE SUPABASE_SERVICE_ROLE_KEY NEXT_PUBLIC_APP_NAME NEXT_PUBLIC_APP_URL; do
+            grep -v "^${key}=" "$ENV_FILE" > "${ENV_FILE}.tmp" || true
+            mv "${ENV_FILE}.tmp" "$ENV_FILE"
+          done
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}"
+            echo "NEXT_PUBLIC_ENABLE_SUPABASE=true"
+            echo "SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}"
+            echo "NEXT_PUBLIC_APP_NAME=Guardianes del Manglar"
+            echo "NEXT_PUBLIC_APP_URL=https://guardianes-del-manglar.vercel.app"
+          } >> "$ENV_FILE"
+
       - name: Build
         run: npx vercel@latest build --prod --token="${{ secrets.VERCEL_TOKEN }}"
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          NEXT_PUBLIC_ENABLE_SUPABASE: "true"
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Deploy
         id: deploy
