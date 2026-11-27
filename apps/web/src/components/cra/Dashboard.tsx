@@ -159,18 +159,19 @@ export function CraDashboard() {
         </p>
       ) : null}
 
-      <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
-        <section className="min-w-0">
+      <div className="grid items-stretch gap-4 lg:grid-cols-[1.55fr_1fr] lg:gap-5">
+        <section className="flex min-w-0 flex-col">
           <GuardianesMap
             mode="overview"
             reports={filtered}
             showCraPolygons
             showInvemarPolygons
-            mapClassName="h-[360px] lg:h-[560px]"
+            className="flex-1"
+            mapClassName="h-[320px] sm:h-[380px] lg:h-[520px]"
           />
         </section>
 
-        <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:max-h-[760px]">
+        <section className="flex min-h-[420px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:min-h-0 lg:h-full lg:max-h-[720px]">
           <div className="border-b border-slate-200 bg-slate-50 p-4">
             <div className="flex items-center justify-between gap-2">
               <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">

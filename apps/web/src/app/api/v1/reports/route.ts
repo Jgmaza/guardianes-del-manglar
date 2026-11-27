@@ -10,7 +10,7 @@ export const runtime = 'nodejs';
  */
 export async function GET() {
   const service = getReportService();
-  const data = service.listReportsForDashboard();
+  const data = await service.listReportsForDashboardHydrated();
   return NextResponse.json({
     data,
     meta: {

@@ -92,7 +92,13 @@ export class PersistingReportService {
   }
 
   async listReportsForDashboardHydrated(): Promise<DashboardReportListItem[]> {
-    // Memory + already-hydrated rows. Full table scan from Supabase is a later step.
+    if (this.repo) {
+      try {
+        await this.repo.hydrateRecent(this.inner.getStore(), 100);
+      } catch (err) {
+        console.error('Failed to hydrate dashboard reports from Supabase', err);
+      }
+    }
     return this.inner.listReportsForDashboard();
   }
 

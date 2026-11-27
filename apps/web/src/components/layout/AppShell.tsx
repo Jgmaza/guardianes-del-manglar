@@ -26,7 +26,7 @@ export function AppShell({
     <div className="flex min-h-screen flex-col">
       <header className="bg-mg-900 text-white shadow-lg">
         <div
-          className={`mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-3 ${isCra ? 'max-w-[1440px]' : 'max-w-6xl md:px-8'}`}
+          className={`mx-auto flex flex-col gap-3 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between ${isCra ? 'max-w-[1440px]' : 'max-w-6xl md:px-8'}`}
         >
           <Link href={isCra ? '/cra' : '/'} className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-mg-500">
@@ -41,13 +41,13 @@ export function AppShell({
               </span>
               <span className="block text-xs text-emerald-200">
                 {isCra
-                  ? 'Corporación Autónoma Regional del Atlántico · Gestión de reportes'
+                  ? 'C.R.A. Atlántico · Gestión de reportes'
                   : 'Ciencia ciudadana · Atlántico'}
               </span>
             </span>
           </Link>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {!isCra ? (
               <nav className="hidden items-center gap-1 text-sm md:flex" aria-label="Principal">
                 {CITIZEN_NAV.map((item) => {
