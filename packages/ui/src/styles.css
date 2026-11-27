@@ -1,8 +1,8 @@
 :root {
-  --gdm-ink: #0f1f1a;
-  --gdm-foam: #f3f7f4;
-  --gdm-mangrove: #1f6b4a;
-  --gdm-tide: #2a8f6a;
-  --gdm-sand: #d7c4a3;
-  --gdm-alert: #b45309;
+  --gdm-ink: #0f172a;
+  --gdm-foam: #eef2f1;
+  --gdm-mangrove: #115740;
+  --gdm-tide: #166a4d;
+  --gdm-sand: #f59e0b;
+  --gdm-alert: #dc2626;
 }
