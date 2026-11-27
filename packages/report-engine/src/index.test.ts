@@ -117,6 +117,81 @@ describe('@guardianes/report-engine domain', () => {
     expect(service.getStore().reports.get(created.report.id)?.status).toBe('alerted');
   });
 
+  it('applies geo match and exposes CRA/INVEMAR fields on dashboard rows', () => {
+    const service = ReportService.create();
+    const created = service.createReport({
+      channel: 'pwa',
+      location: baseLocation(),
+      description: 'Near Mallorquín',
+    });
+    service.applyGeoMatch(created.report.id, {
+      matchedAt: '2026-11-27T00:00:00.000Z',
+      longitude: created.report.location.longitude,
+      latitude: created.report.location.latitude,
+      cra: {
+        hasCoverage: true,
+        matchCount: 1,
+        priority: 'Alto',
+        zoneHydro: 'Bajo Magdalena',
+        subzoneHydro: 'Cienaga Mallorquin',
+        unitHydro: 'Cienaga Mayorquin',
+        action: 'Preservación',
+        scenario: 'Escenario I',
+      },
+      invemar: {
+        hasCoverage: true,
+        matchCount: 1,
+        dominantSpecies: 'A. germinans',
+        composition: 'A. germinans',
+        structure: 'Bosque',
+        managementZone: 'Recuperación Tipo I',
+        locality: 'Ciénaga Mallorquín',
+      },
+    });
+
+    expect(service.getStore().reports.get(created.report.id)?.status).toBe('geo_processed');
+    const row = service.listReportsForDashboard()[0];
+    expect(row?.priorityHint).toBe('Alto');
+    expect(row?.dominantSpecies).toBe('A. germinans');
+    expect(row?.managementZone).toBe('Recuperación Tipo I');
+    expect(row?.zoneHydro).toBe('Bajo Magdalena');
+    expect(service.listEvents(created.report.id).some((e) => e.type === 'geo_matched')).toBe(
+      true,
+    );
+  });
+
+  it('lists sanitized dashboard rows without secrets or invented priority', () => {
+    const service = ReportService.create();
+    const first = service.createReport({
+      channel: 'pwa',
+      location: baseLocation(),
+      description: 'Primero',
+      reporterHandle: 'whatsapp:+570000000001',
+    });
+    const second = service.createReport({
+      channel: 'whatsapp',
+      location: { ...baseLocation(), latitude: 10.5 },
+      description: 'Segundo',
+    });
+    service.createPreliminaryAlert({
+      reportId: second.report.id,
+      title: 'Preliminar',
+      rationale: 'Revisión inicial',
+      createdBy: 'cra_reviewer',
+    });
+
+    const list = service.listReportsForDashboard();
+    expect(list).toHaveLength(2);
+    const byId = Object.fromEntries(list.map((row) => [row.id, row]));
+    expect(byId[second.report.id]?.hasPreliminaryAlert).toBe(true);
+    expect(byId[first.report.id]?.hasPreliminaryAlert).toBe(false);
+    expect(list.every((row) => row.priorityHint === null)).toBe(true);
+    expect(list.every((row) => row.geoMatch === null)).toBe(true);
+    expect(JSON.stringify(list)).not.toContain(first.trackingSecret);
+    expect(JSON.stringify(list)).not.toContain('whatsapp:+57');
+    expect(JSON.stringify(list)).not.toContain('trackingSecretHash');
+  });
+
   it('keeps exports free of personal data and secrets', () => {
     const service = ReportService.create();
     const created = service.createReport({

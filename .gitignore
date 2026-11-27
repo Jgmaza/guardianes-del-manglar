@@ -13,7 +13,12 @@ out
 .env
 .env.local
 .env.*.local
+.supabase-project.env
 !.env.example
+
+# whatsapp bot session (Baileys)
+apps/whatsapp-bot/bot/auth_info/
+apps/whatsapp-bot/bot/.bot.lock
 
 # tests / coverage
 coverage
@@ -41,9 +46,15 @@ next-env.d.ts
 # geo data (large / derived)
 data/raw/*.kmz
 data/raw/kmz_extract/
+data/raw/invemar-zonificacion-atlantico/*.geojson
 data/processed/*.ndjson
 data/processed/*.geojson
+data/processed/**/*.ndjson
+data/processed/**/*.geojson
 !data/raw/README.md
+!data/raw/invemar-zonificacion-atlantico/SOURCE.txt
+!data/raw/invemar-zonificacion-atlantico/*.sha256
 !data/processed/README.md
+!data/processed/**/layer_manifest.json
 !data/raw/*.sha256
 !data/inspection/

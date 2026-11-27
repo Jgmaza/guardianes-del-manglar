@@ -1,0 +1,65 @@
+USER> menu
+BOT>
+<?xml version="1.0" encoding="UTF-8"?><Response><Message>Hola, soy *Manglar Alerta*.
+Te oriento a quién reportar un daño ambiental (triage tipo alerta institucional).
+
+¿Hay peligro ahora mismo? (fuego, caza en curso, gente en riesgo)
+1) Sí, hay peligro ahora
+2) No, puedo seguir con calma
+
+_Responde con el número. Escribe *menu* para reiniciar. Si escribes *peligro*, subimos a alerta roja._</Message></Response>
+
+USER> 1
+BOT>
+<?xml version="1.0" encoding="UTF-8"?><Response><Message>Ok: *peligro ahora*. Prioridad máxima.
+
+¿Qué estás viendo?
+1) Cortan árboles
+2) Fuego o humo
+3) Basura o escombros
+4) Animales silvestres / caza
+5) Invasión de terreno o manglar</Message></Response>
+
+USER> 2
+BOT>
+<?xml version="1.0" encoding="UTF-8"?><Response><Message>Ok: *Fuego o humo*
+Alerta *roja* (no bajamos la urgencia). ¿Dónde ocurre?
+
+¿En dónde está pasando?
+1) Barranquilla
+2) Otro municipio del Atlántico
+3) Playa, manglar o zona costera</Message></Response>
+
+USER> 1
+BOT>
+<?xml version="1.0" encoding="UTF-8"?><Response><Message>Ok: *Barranquilla*
+
+¿Cómo quieres reportar? (la denuncia puede ser anónima)
+1) Anónimo — sin mis datos
+2) Con mis datos — para seguimiento</Message></Response>
+
+USER> 1
+BOT>
+<?xml version="1.0" encoding="UTF-8"?><Response><Message>Ok: *Anónimo — sin mis datos*
+
+*Alerta roja — actuar ahora* (P0)
+Prioridad máxima. Si hay riesgo para personas o daño en curso, llama de inmediato.
+
+*Entidad:* Bomberos de Barranquilla + Policía
+*Contacto:* Llama al 119 y al 123 | Est. Central: 320 830 4460
+*Qué hacer:* Aléjate del humo y llama de inmediato.
+
+*Evidencia útil:* Si puedes sin acercarte: punto de referencia visible. No te expongas.
+*Privacidad:* Anónimo — sin mis datos
+_Modo anónimo: no pedimos tu nombre. En WhatsApp el canal puede ver el número; en la web puedes reportar sin identificarte._
+
+⚠️ Si no te contestan rápido y hay peligro o delito en curso, llama siempre al 123 (Policía) o al 119 (Bomberos).
+
+_Escribe menu para otro reporte._
+
+*Reporte registrado en la API*
+Código de seguimiento: *GDM-E4EEHBDK*
+Secreto (solo esta vez): `[REDACTED]`
+Guárdalos para consultar el estado después.</Message></Response>
+
+

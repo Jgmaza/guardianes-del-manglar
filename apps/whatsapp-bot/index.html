@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manglar Alerta — Reporte ambiental</title>
+    <meta
+      name="description"
+      content="Reporta daños ambientales en Barranquilla, Atlántico y zona costera. Te dice a quién llamar."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Source+Sans+3:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <p class="brand">Manglar Alerta</p>
+        <h1>Reporta. Te guiamos a quién llamar.</h1>
+        <p class="lede">
+          Triage por peligro, tipo, alerta y zona. Puedes reportar en anónimo
+          o con datos para seguimiento.
+        </p>
+      </header>
+
+      <main class="shell">
+        <section class="chat" aria-label="Asistente de reporte">
+          <div class="chat-top">
+            <div class="status-dot" aria-hidden="true"></div>
+            <div>
+              <p class="chat-title">Asistente de reporte</p>
+              <p class="chat-sub">Triage institucional · anónimo opcional</p>
+            </div>
+            <button type="button" class="ghost-btn" id="btn-reset" hidden>
+              Reiniciar
+            </button>
+          </div>
+
+          <div class="messages" id="messages" role="log" aria-live="polite"></div>
+
+          <div class="choices" id="choices"></div>
+
+          <p class="fallback">
+            Si hay peligro o delito en curso y no contestan: llama al
+            <strong>123</strong> (Policía) o al <strong>119</strong> (Bomberos).
+          </p>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

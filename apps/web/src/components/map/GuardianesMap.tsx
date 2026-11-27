@@ -1,16 +1,17 @@
 'use client';
 
 import { useEffect, useId, useRef } from 'react';
-import type { FixtureReport } from '@/lib/api-client';
+import type { DashboardReport } from '@/lib/api-client';
 
 export type MapMode = 'citizen-pick' | 'overview';
 
 type Props = {
   mode: MapMode;
-  reports?: FixtureReport[];
+  reports?: DashboardReport[];
   pick?: { longitude: number; latitude: number } | null;
   onPick?: (point: { longitude: number; latitude: number }) => void;
   showCraPolygons?: boolean;
+  showInvemarPolygons?: boolean;
   className?: string;
 };
 
@@ -20,12 +21,20 @@ const PRIORITY_COLORS: Record<string, string> = {
   Bajo: '#1f6b4a',
 };
 
+const SPECIES_COLORS: Record<string, string> = {
+  'A. germinans': '#0f766e',
+  'C. erectus': '#365314',
+  'R. mangle': '#9f1239',
+  'L. racemosa': '#a16207',
+};
+
 export function GuardianesMap({
   mode,
   reports = [],
   pick,
   onPick,
   showCraPolygons = true,
+  showInvemarPolygons = true,
   className = '',
 }: Props) {
   const mapId = useId().replace(/:/g, '');
@@ -66,16 +75,41 @@ export function GuardianesMap({
             return {
               color: PRIORITY_COLORS[pri] ?? '#2a8f6a',
               weight: 1,
-              fillOpacity: 0.25,
+              fillOpacity: 0.18,
             };
           },
           onEachFeature: (feature, layer) => {
             const p = feature.properties ?? {};
             layer.bindPopup(
               `<strong>${p.NOMUH ?? p.name ?? 'Unidad'}</strong><br/>` +
-                `Prioridad: ${p.Val_Priori ?? '—'}<br/>` +
+                `Prioridad C.R.A.: ${p.Val_Priori ?? '—'}<br/>` +
                 `Subzona: ${p.NOMSZH ?? '—'}<br/>` +
-                `<em class="text-xs">FIXTURE · muestra simplificada</em>`,
+                `<em>FIXTURE · muestra prioridades (~75 / 14.7k)</em>`,
+            );
+          },
+        }).addTo(map);
+      }
+
+      if (showInvemarPolygons) {
+        const res = await fetch('/fixtures/invemar-zonificacion-atlantico.geojson');
+        const geojson = await res.json();
+        L.geoJSON(geojson, {
+          style: (feature) => {
+            const sp = String(feature?.properties?.COB_SPDOM ?? '');
+            return {
+              color: SPECIES_COLORS[sp] ?? '#115e59',
+              weight: 1,
+              fillOpacity: 0.35,
+            };
+          },
+          onEachFeature: (feature, layer) => {
+            const p = feature.properties ?? {};
+            layer.bindPopup(
+              `<strong>${p.LOCALIDAD ?? 'Manglar'}</strong><br/>` +
+                `Especie dom.: ${p.COB_SPDOM ?? '—'}<br/>` +
+                `Zonif.: ${p.ZONIF ?? '—'}<br/>` +
+                `Comp.: ${p.COB_CMPSCI ?? '—'}<br/>` +
+                `<em>INVEMAR SIGMA · geometría simplificada</em>`,
             );
           },
         }).addTo(map);
@@ -90,7 +124,11 @@ export function GuardianesMap({
           weight: 1,
         }).addTo(map);
         marker.bindPopup(
-          `<strong>${report.trackingCode}</strong><br/>${report.status}<br/>${report.description}`,
+          `<strong>${report.trackingCode}</strong><br/>` +
+            `${report.status}<br/>` +
+            `${report.description ?? ''}<br/>` +
+            `Prioridad: ${report.priorityHint ?? '—'} · ` +
+            `Especie: ${report.dominantSpecies ?? '—'}`,
         );
       }
 
@@ -118,14 +156,14 @@ export function GuardianesMap({
       mapRef.current?.remove();
       mapRef.current = null;
     };
-  }, [mapId, mode, onPick, pick, reports, showCraPolygons]);
+  }, [mapId, mode, onPick, pick, reports, showCraPolygons, showInvemarPolygons]);
 
   return (
     <div className={`overflow-hidden rounded-2xl border border-white/10 ${className}`}>
       <div id={`map-${mapId}`} className="h-[320px] w-full md:h-[420px]" />
       <p className="bg-black/30 px-3 py-2 text-xs text-[var(--muted)]">
-        Capa C.R.A. en mapa: fixture simplificado (~75 polígonos). No descarga la capa completa
-        (~14.7k).
+        Capas: prioridades C.R.A. (fixture) · zonificación INVEMAR (especie/zonif., 196) · puntos =
+        reportes. Join real al crear reporte vía PostGIS.
       </p>
     </div>
   );

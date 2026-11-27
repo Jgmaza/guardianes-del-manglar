@@ -55,3 +55,9 @@ export {
   pointInMultiPolygon,
   type LonLat,
 } from './pip';
+
+export {
+  summarizeGeoMatch,
+  type GeoMatchHit,
+  type GeoMatchRawPayload,
+} from './match';

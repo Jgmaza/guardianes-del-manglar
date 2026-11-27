@@ -1,0 +1,25 @@
+{
+  "name": "@guardianes/whatsapp-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "WhatsApp bot + demo web de triage ambiental (Twilio sandbox / Baileys opcional)",
+  "scripts": {
+    "dev": "node bot/twilio-server.js",
+    "bot": "node bot/twilio-server.js",
+    "bot:twilio": "node bot/twilio-server.js",
+    "bot:qr": "node bot/index.js",
+    "web": "npx --yes serve . -p 3002",
+    "start": "node bot/twilio-server.js",
+    "tunnel": "npx --yes cloudflared tunnel --url http://localhost:3001"
+  },
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "baileys": "^6.7.21",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "pino": "^9.6.0",
+    "qrcode-terminal": "^0.12.0",
+    "twilio": "^5.4.5"
+  }
+}

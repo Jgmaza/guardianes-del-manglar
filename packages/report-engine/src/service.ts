@@ -1,11 +1,13 @@
 import type {
   Alert,
+  DashboardReportListItem,
   Evidence,
   EvidenceVerification,
   PublicReportTrackingView,
   Report,
   ReportCategory,
   ReportEvent,
+  ReportGeoMatch,
   ReportStatus,
   ReportVerification,
   ReporterReference,
@@ -28,6 +30,7 @@ import {
 import {
   assertNoPiiFields,
   stripReporterFromDashboardReport,
+  toDashboardListItem,
   toPublicTrackingView,
   toSanitizedExport,
 } from './anonymity';
@@ -125,6 +128,7 @@ export class ReportService {
     this.appendEvent(report.id, 'created', {
       channel: report.channel,
       categoryId: report.categoryId,
+      ...(input.triage ? { triage: input.triage } : {}),
     });
     if (category) {
       this.appendEvent(report.id, 'category_assigned', {
@@ -272,6 +276,66 @@ export class ReportService {
 
   dashboardView(reportId: string): ReturnType<typeof stripReporterFromDashboardReport> {
     return stripReporterFromDashboardReport(this.requireReport(reportId));
+  }
+
+  /**
+   * Apply PostGIS point-in-polygon result. Transitions submitted → geo_processed.
+   * Stores summary for dashboard; does not invent attributes.
+   */
+  applyGeoMatch(reportId: string, match: ReportGeoMatch): Report {
+    const report = this.requireReport(reportId);
+    this.store.geoMatches.set(reportId, match);
+    this.appendEvent(reportId, 'geo_matched', {
+      cra: match.cra,
+      invemar: match.invemar,
+      matchedAt: match.matchedAt,
+    });
+
+    if (report.status === 'submitted') {
+      const from = report.status;
+      assertTransition(from, 'geo_processed');
+      report.status = 'geo_processed';
+      report.updatedAt = new Date().toISOString();
+      this.appendEvent(reportId, 'status_changed', {
+        from,
+        to: 'geo_processed',
+        reason: 'geo_match_completed',
+      });
+    } else {
+      report.updatedAt = new Date().toISOString();
+    }
+    return report;
+  }
+
+  getGeoMatch(reportId: string): ReportGeoMatch | null {
+    return this.store.geoMatches.get(reportId) ?? null;
+  }
+
+  /**
+   * Sanitized CRA list — newest first. No secrets, no reporter references.
+   * Geo fields filled when applyGeoMatch has run.
+   */
+  listReportsForDashboard(): DashboardReportListItem[] {
+    const rows: DashboardReportListItem[] = [];
+    for (const report of this.store.reports.values()) {
+      const category =
+        this.store.categories.find((c) => c.id === report.categoryId) ?? null;
+      const alerts = this.store.alerts.filter((a) => a.reportId === report.id);
+      rows.push(
+        toDashboardListItem({
+          report,
+          category,
+          evidenceCount: getReportEvidences(this.store, report.id).length,
+          hasPreliminaryAlert: alerts.some(
+            (a) => a.status === 'preliminary' || a.status === 'active',
+          ),
+          geoMatch: this.store.geoMatches.get(report.id) ?? null,
+        }),
+      );
+    }
+    return rows.sort(
+      (a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime(),
+    );
   }
 
   exportSanitized(reportId: string): SanitizedReportExport {

@@ -2,9 +2,13 @@
  * Shared domain contracts.
  */
 
+import type { GeoPoint, ReportChannel, ReportStatus } from './reports';
+
 export type {
   Alert,
   AlertStatus,
+  DashboardReportListItem,
+  ReportGeoMatch,
   Evidence,
   EvidenceExif,
   EvidenceMediaKind,
@@ -30,9 +34,9 @@ export type {
 export interface ReportSummary {
   id: string;
   trackingCode: string;
-  channel: import('./reports').ReportChannel;
-  status: import('./reports').ReportStatus;
-  location: import('./reports').GeoPoint;
+  channel: ReportChannel;
+  status: ReportStatus;
+  location: GeoPoint;
   createdAt: string;
 }
 
