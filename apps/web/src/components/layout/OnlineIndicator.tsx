@@ -31,14 +31,14 @@ export function OnlineIndicator() {
 
   return (
     <div
-      className="flex items-center gap-2 text-xs"
+      className="flex items-center gap-2 rounded-full bg-mg-950/60 px-3 py-1.5 text-xs"
       role="status"
       aria-live="polite"
     >
       <span
         className={`inline-block h-2 w-2 rounded-full ${online ? 'bg-emerald-400' : 'bg-amber-400'}`}
       />
-      <span className="text-[var(--muted)]">
+      <span className="text-emerald-100">
         {online ? 'En línea' : 'Sin conexión'}
         {pending > 0 ? ` · ${pending} pendiente${pending === 1 ? '' : 's'} de sincronizar` : ''}
       </span>

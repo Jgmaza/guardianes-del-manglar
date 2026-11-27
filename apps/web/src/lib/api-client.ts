@@ -26,9 +26,6 @@ export type DashboardReport = {
   geoMatch?: unknown;
 };
 
-/** Alias kept for map/fixture callers */
-export type FixtureReport = DashboardReport;
-
 function withGeoDefaults(
   row: Partial<DashboardReport> &
     Pick<
@@ -74,21 +71,11 @@ export async function fetchCategories() {
   return json.data;
 }
 
-export async function fetchDashboardReports(): Promise<{
-  reports: DashboardReport[];
-  source: 'api' | 'fixture';
-}> {
+export async function fetchDashboardReports(): Promise<DashboardReport[]> {
   const res = await fetch('/api/v1/reports');
-  if (!res.ok) {
-    const fixtures = await loadFixtureReports();
-    return { reports: fixtures, source: 'fixture' };
-  }
-  const json = (await res.json()) as { data: DashboardReport[] };
-  if (json.data.length > 0) {
-    return { reports: json.data.map((r) => withGeoDefaults(r)), source: 'api' };
-  }
-  const fixtures = await loadFixtureReports();
-  return { reports: fixtures, source: 'fixture' };
+  const json = (await res.json()) as { data?: DashboardReport[]; error?: string };
+  if (!res.ok) throw new Error(json.error ?? 'No se pudieron cargar los reportes');
+  return (json.data ?? []).map((r) => withGeoDefaults(r));
 }
 
 export async function trackReport(trackingCode: string, trackingSecret: string) {
@@ -129,10 +116,4 @@ export async function fetchReportEvents(id: string) {
   const json = (await res.json()) as { data?: unknown; error?: string };
   if (!res.ok) throw new Error(json.error ?? 'No se pudieron cargar eventos');
   return json.data;
-}
-
-export async function loadFixtureReports(): Promise<DashboardReport[]> {
-  const res = await fetch('/fixtures/demo-reports.json');
-  const json = (await res.json()) as { fixture: boolean; reports: DashboardReport[] };
-  return json.reports.map((r) => withGeoDefaults(r));
 }
