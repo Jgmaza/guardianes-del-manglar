@@ -103,3 +103,30 @@ Errores/avisos por feature/etapa (**sin descarte silencioso**).
 - `geographic_features_geom_gix` — GiST(`geom`)
 - `geographic_features_bbox_gix` — GiST(`bbox`)
 - Funciones: `geo_features_at_point`, `geo_features_in_bbox`, `geo_point_has_coverage`
+
+---
+
+## 6. Capa INVEMAR — `invemar_zonificacion_atlantico`
+
+| Campo lógico | Valor |
+|--------------|-------|
+| `code` | `invemar_zonificacion_atlantico` |
+| Fuente | INVEMAR SIGMA MapServer `ZONIFICACION` / layer 0 |
+| URL | https://gis.invemar.org.co/ArcGIS/rest/services/SIGMA/ZONIFICACION/MapServer/0 |
+| Features | 196 |
+| CRS | EPSG:4326 |
+| Nota | Zonificación histórica de manglar Atlántico — **citar INVEMAR**; no sustituye prioridades C.R.A. |
+
+### Atributos útiles observados (no inventados)
+
+| Atributo | Uso operativo |
+|----------|---------------|
+| `COB_SPDOM` | Especie dominante (ej. `A. germinans`, `C. erectus`) |
+| `COB_CMPSCI` | Composición de especies |
+| `COB_ESTRCT` | Estructura / altura del bosque |
+| `ZONIF` / `ZONIFICACI` | Categoría de manejo (Preservación, Recuperación…) |
+| `LOCALIDAD` | Localidad (ej. Ciénaga Mallorquín) |
+| `COB_INTRVN` | Nivel de intervención |
+| `USOACTUAL` | Uso actual observado en el estudio |
+
+Import: `pnpm geo:import-invemar-zonificacion` → `pnpm geo:load-supabase -- --processed-dir data/processed/invemar_zonificacion_atlantico`

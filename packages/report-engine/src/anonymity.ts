@@ -1,4 +1,5 @@
 import type {
+  DashboardReportListItem,
   PublicReportTrackingView,
   Report,
   ReportCategory,
@@ -72,6 +73,29 @@ export function toSanitizedExport(options: {
     observedAt: options.report.observedAt,
     receivedAt: options.report.receivedAt,
     evidenceCount: options.evidenceCount,
+  };
+}
+
+export function toDashboardListItem(options: {
+  report: Report;
+  category: ReportCategory | null;
+  evidenceCount: number;
+  hasPreliminaryAlert: boolean;
+  geoMatch?: import('@guardianes/contracts').ReportGeoMatch | null;
+}): DashboardReportListItem {
+  const geo = options.geoMatch ?? null;
+  return {
+    ...toSanitizedExport(options),
+    categoryLabel: options.category?.label ?? null,
+    hasPreliminaryAlert: options.hasPreliminaryAlert,
+    updatedAt: options.report.updatedAt,
+    priorityHint: geo?.cra.priority ?? null,
+    zoneHydro: geo?.cra.zoneHydro ?? null,
+    unitHydro: geo?.cra.unitHydro ?? null,
+    dominantSpecies: geo?.invemar.dominantSpecies ?? null,
+    managementZone: geo?.invemar.managementZone ?? null,
+    locality: geo?.invemar.locality ?? null,
+    geoMatch: geo,
   };
 }
 

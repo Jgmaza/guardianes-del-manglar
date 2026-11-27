@@ -1,7 +1,9 @@
 # GEO_IMPORT — pipeline reproducible
 
 **Estado:** `IMPLEMENTED` (inspección + normalización + schema/consultas + carga Supabase)  
-**Carga PostGIS en Supabase (`guardianes-del-manglar`):** `IMPLEMENTED` (14 732 features)
+**Carga PostGIS en Supabase (`guardianes-del-manglar`):** `IMPLEMENTED`  
+- `cra_prioridades_conservacion` — 14 732 features  
+- `invemar_zonificacion_atlantico` — 196 features (especie dominante / zonif. manejo)
 
 ---
 
@@ -85,10 +87,16 @@ Carga masiva (idempotente por `layer.code`):
 # SUPABASE_PROJECT_REF + DATABASE_PASSWORD (no commitear)
 pnpm geo:load-supabase
 # smoke: node tools/geo-import/scripts/load-supabase.mjs --limit 100
+
+# Capa INVEMAR (tipología / zonificación Atlántico) — no pisa la capa C.R.A.
+pnpm geo:import-invemar-zonificacion
+pnpm geo:load-supabase -- --processed-dir data/processed/invemar_zonificacion_atlantico
 ```
 
 Script: `tools/geo-import/scripts/load-supabase.mjs`  
 Usa pooler IPv4 (`aws-2-<region>.pooler.supabase.com:5432`, session mode) porque el host `db.*` suele ser solo IPv6. Aplica `ST_Force2D` + `ST_MakeValid` al insertar.
+
+`--processed-dir` apunta al manifest + `features.ndjson` de la capa a cargar.
 
 Lectura del SQL desde código:
 
@@ -107,8 +115,10 @@ Builders en `@guardianes/geo-engine`:
 - `sqlFeaturesAtPoint` → `geo_features_at_point`
 - `sqlFeaturesInBBox` → `geo_features_in_bbox`
 - `sqlPointHasCoverage` → `geo_point_has_coverage`
+- RPC `geo_match_report_location(lon, lat)` → hits CRA + INVEMAR en un JSON (usada al crear reportes)
 
-Devuelven filas con `properties_original` (atributos de origen).
+Devuelven filas con `properties_original` (atributos de origen).  
+`summarizeGeoMatch` proyecta prioridad / zona UH / especie dominante / zonif. de manejo para el dashboard.
 
 Comportamientos cubiertos:
 
@@ -131,7 +141,8 @@ Ver `GEO_INSPECTION_REPORT.md`:
 - Atributos en HTML, no ExtendedData.
 - Decimales con coma en atributos tabulares.
 - MultiGeometry en el 100 % de placemarks.
-- Capa de prioridades hidrográficas, no inventario de manglar etiquetado.
+- Capa C.R.A. de prioridades hidrográficas, no inventario de manglar etiquetado.
+- Tipología de manglar (especie dominante, estructura, zonif. manejo): capa aparte `invemar_zonificacion_atlantico` (INVEMAR SIGMA). Citar fuente; no mezclar como “dato C.R.A. operativo en vivo”.
 
 ---
 

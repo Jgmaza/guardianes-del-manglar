@@ -4,6 +4,24 @@ import { getReportService } from '@/server/report-service';
 export const runtime = 'nodejs';
 
 /**
+ * GET /api/v1/reports
+ * Sanitized CRA dashboard list (no secrets, no reporter references).
+ * In-memory store — empty until reports are created via POST / PWA / WhatsApp.
+ */
+export async function GET() {
+  const service = getReportService();
+  const data = service.listReportsForDashboard();
+  return NextResponse.json({
+    data,
+    meta: {
+      count: data.length,
+      persistence: service.persistenceEnabled ? 'supabase' : 'memory',
+      note: 'Geo fields (priorityHint, zone, species) filled when PostGIS match runs at create time.',
+    },
+  });
+}
+
+/**
  * POST /api/v1/reports
  * Creates a channel-agnostic report (PWA or WhatsApp adapter uses the same contract).
  * Returns trackingCode + trackingSecret once. No account required.
@@ -13,6 +31,7 @@ export async function POST(request: Request) {
     const body: unknown = await request.json();
     const service = getReportService();
     const result = await service.createReport(body);
+    const geoMatch = service.getStore().geoMatches.get(result.report.id) ?? null;
     return NextResponse.json(
       {
         data: {
@@ -30,9 +49,11 @@ export async function POST(request: Request) {
             : null,
           observedAt: result.report.observedAt,
           receivedAt: result.report.receivedAt,
+          geoMatch,
         },
         meta: {
           persistence: service.persistenceEnabled ? 'supabase' : 'memory',
+          geoMatched: Boolean(geoMatch),
           warning:
             'Store trackingSecret securely. It is not returned again and is never shown on CRA dashboards.',
         },

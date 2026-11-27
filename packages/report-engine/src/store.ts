@@ -5,6 +5,7 @@ import type {
   Report,
   ReportCategory,
   ReportEvent,
+  ReportGeoMatch,
   ReportVerification,
   ReporterReference,
 } from '@guardianes/contracts';
@@ -20,6 +21,8 @@ export type ReportDomainStore = {
   events: ReportEvent[];
   alerts: Alert[];
   reporters: Map<string, ReporterReference>;
+  /** Point-in-polygon enrichment keyed by report id */
+  geoMatches: Map<string, ReportGeoMatch>;
 };
 
 export function createInMemoryStore(categories: ReportCategory[] = []): ReportDomainStore {
@@ -34,6 +37,7 @@ export function createInMemoryStore(categories: ReportCategory[] = []): ReportDo
     events: [],
     alerts: [],
     reporters: new Map(),
+    geoMatches: new Map(),
   };
 }
 

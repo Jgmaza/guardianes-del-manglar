@@ -1,6 +1,9 @@
 # data/processed — salidas del pipeline de importación
 
-Generado por `pnpm --filter @guardianes/geo-import normalize`.
+| Ruta | Origen |
+|------|--------|
+| `data/processed/` (raíz) | C.R.A. prioridades — `pnpm geo:normalize` |
+| `data/processed/invemar_zonificacion_atlantico/` | INVEMAR zonificación — `pnpm geo:import-invemar-zonificacion` |
 
 | Artefacto | Descripción |
 |-----------|-------------|
