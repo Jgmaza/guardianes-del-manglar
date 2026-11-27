@@ -1,24 +1,56 @@
 # WhatsApp bot — Guardianes del Manglar
 
-**Estado:** `PENDING` — espacio reservado para el chatbot del equipo.
+**Estado:** `READY` (demo triage) — canal Twilio recomendado; Baileys QR opcional.
 
-## Objetivo
+Bot de orientación ciudadana: peligro → tipo → alerta → zona → privacidad → ruta de contacto  
+(Barranquilla / Atlántico / costa). Motor en `engine.js` + reglas en `data.js`.
 
-Reutilizar el chatbot existente en JavaScript/TypeScript y adaptarlo para que cree
-**el mismo reporte canónico** que la PWA, vía `POST /api/v1/reports` (+ evidencias).
+## Objetivo del monorepo
 
-## Contrato
+Reutilizar este bot para crear **el mismo reporte canónico** que la PWA vía  
+`POST /api/v1/reports` (ver `docs/REPORTS_API.md`). El triage y la ruta de entidades  
+ya están listos; el adapter a la API de reportes es el siguiente paso.
 
-Ver `docs/REPORTS_API.md`.
+## Arranque rápido
 
-- Canal: `whatsapp`
-- Ubicación: `location.source = "whatsapp_shared_location"` cuando aplique
-- No asumir que WhatsApp conserva EXIF
-- No mezclar identidad del denunciante en el payload ambiental (usar `reporterHandle` opaco si hace falta)
+```bash
+cd apps/whatsapp-bot
+pnpm install   # o npm install
+cp .env.example .env
+# completa TWILIO_* en .env
+pnpm bot       # webhook Twilio en :3001
+pnpm tunnel    # URL pública para el sandbox
+pnpm web       # demo HTML en :3000
+```
 
-## Cómo integrar
+### Twilio (recomendado)
 
-1. Coloca aquí el código del bot (o un adapter fino sobre el repo existente).
-2. Configura el proveedor WhatsApp con variables de entorno locales (nunca en Git).
-3. Traduce mensajes/medios → contrato de reportes.
-4. Devuelve al ciudadano el `trackingCode` + `trackingSecret` generados por la API.
+No vincula tu WhatsApp personal. Usa el sandbox:
+
+1. Account SID + Auth Token en `.env`
+2. `TWILIO_WHATSAPP_FROM=whatsapp:+1...` (número sandbox)
+3. Webhook: `https://TU-TUNEL/whatsapp` (POST) en Sandbox settings
+4. Desde el celular: `join ...` y luego `Hola`
+
+Consola legacy del webhook:  
+https://www.twilio.com/console/sms/whatsapp/sandbox
+
+### Baileys QR (opcional)
+
+```bash
+pnpm bot:qr
+```
+
+Solo con número temporal / prestado. Riesgo de límites si usas tu cuenta personal.
+
+## Archivos
+
+| Ruta | Rol |
+|------|-----|
+| `engine.js` | Máquina de estados del chat |
+| `data.js` | Mensajes + matriz tipo×alerta×zona |
+| `bot/twilio-server.js` | Webhook Express + Twilio |
+| `bot/index.js` | Bot QR (Baileys) |
+| `index.html` + `app.js` | Demo interactiva en navegador |
+
+Árbol de decisión y referencias: `docs/bot/`.

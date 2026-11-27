@@ -13,7 +13,12 @@ out
 .env
 .env.local
 .env.*.local
+.supabase-project.env
 !.env.example
+
+# whatsapp bot session (Baileys)
+apps/whatsapp-bot/bot/auth_info/
+apps/whatsapp-bot/bot/.bot.lock
 
 # tests / coverage
 coverage

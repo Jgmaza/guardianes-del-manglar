@@ -4,10 +4,12 @@ Mismo método que en el juego (Hold the Box).
 
 | Rama | Para qué | Quién escribe |
 |---|---|---|
-| **`main`** | Estable / entregable | Solo **Jose**, vía PR **`dev` → `main`** |
+| **`main`** | Producción / deploy **Vercel** | Solo **Jose**, vía PR **`dev` → `main`** |
 | **`dev`** | Integración diaria del equipo | Solo vía **PR** desde ramas de issue |
 | **`issue/<n>-slug`** | Trabajo de un issue concreto (sale de `dev`) | Quien tenga el issue asignado |
 | **`work/<persona>`** | Rama personal opcional (sync desde `dev`) | Cada quien |
+
+CI corre en PRs a `dev`/`main`. Deploy a Vercel solo al entrar algo a **`main`** (workflow `Deploy Vercel`).
 
 ## Flujo
 

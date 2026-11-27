@@ -1,9 +1,29 @@
 # Bot — decisión y clasificación
 
-Aquí vive el árbol de decisión y la taxonomía de alertas del WhatsApp bot.
+Árbol de decisión y taxonomía de alertas del WhatsApp bot.
 
-Al completar el issue correspondiente, deja:
+## Contenido
 
-1. El árbol (Markdown / Mermaid / JSON — el que prefieras).
-2. La tabla de clasificación de alertas.
-3. **Referencias** al sistema de clasificación en el que te basaste (también deben quedar citadas en el issue de GitHub).
+1. [Árbol de decisión](./arbol-decision.md) (flujo + prioridades + referencias)
+2. Código vivo: `apps/whatsapp-bot/data.js` (matriz) y `engine.js` (triage)
+3. Demo web: `apps/whatsapp-bot/` (`pnpm web`)
+
+## Clasificación de alertas
+
+| ID | Nombre | Prioridad | Criterio ciudadano |
+|----|--------|-----------|--------------------|
+| `ROJO` | Alerta roja | P0 | Está pasando YA o hay peligro |
+| `AMARILLO` | Alerta amarilla | P1 | Ya pasó o se repite |
+| `VERDE` | Alerta verde | P2 | Limpieza, poda o prevención |
+
+## Privacidad
+
+| Modo | Comportamiento |
+|------|----------------|
+| `ANONIMO` | Orientación sin pedir nombre |
+| `IDENTIFICADO` | Sugiere dejar datos al radicar (seguimiento) |
+
+## Referencias citadas
+
+Tabla completa: [referencias.md](./referencias.md).  
+Mapeo a la API de reportes: [reports-mapping.md](./reports-mapping.md).
