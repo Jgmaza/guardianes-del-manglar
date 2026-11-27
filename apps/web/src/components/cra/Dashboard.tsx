@@ -12,19 +12,16 @@ import {
   RefreshCw,
   Siren,
   Timer,
-  X,
   type LucideIcon,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   createAlert,
   fetchDashboardReports,
-  fetchOfficialImpactZones,
   fetchReportEvents,
   patchReportStatus,
   type DashboardReport,
-  type ImpactZonesSummary,
 } from '@/lib/api-client';
 import {
   impactRank,
@@ -57,48 +54,21 @@ export function CraDashboard() {
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [selected, setSelected] = useState<DashboardReport | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [focusToken, setFocusToken] = useState(0);
   const [events, setEvents] = useState<Array<{ type: string; createdAt: string; payload?: unknown }>>(
     [],
   );
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [officialImpact, setOfficialImpact] = useState<ImpactZonesSummary | null>(null);
-  const modalTimerRef = useRef<number | null>(null);
-
-  const closeDetail = useCallback(() => {
-    setDetailOpen(false);
-  }, []);
-
-  /** Click en listado (o marcador): centra mapa y abre modal */
-  const openReport = useCallback((report: DashboardReport) => {
-    setSelected(report);
-    setFocusToken((n) => n + 1);
-    setMessage(null);
-
-    // Que se vea el flyTo del mapa antes del modal
-    document.getElementById('mapa-cra')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-    if (modalTimerRef.current) window.clearTimeout(modalTimerRef.current);
-    modalTimerRef.current = window.setTimeout(() => {
-      setDetailOpen(true);
-    }, 550);
-  }, []);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const [rows, impact] = await Promise.all([
-        fetchDashboardReports(),
-        fetchOfficialImpactZones(),
-      ]);
+      const rows = await fetchDashboardReports();
       setReports(rows);
-      setOfficialImpact(impact);
       setLoadError(null);
       setSelected((prev) => {
-        if (!prev) return null;
-        return rows.find((r) => r.id === prev.id) ?? null;
+        if (!prev) return rows[0] ?? null;
+        return rows.find((r) => r.id === prev.id) ?? rows[0] ?? null;
       });
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : 'No se pudieron cargar los reportes');
@@ -112,34 +82,14 @@ export function CraDashboard() {
   }, [refresh]);
 
   useEffect(() => {
-    return () => {
-      if (modalTimerRef.current) window.clearTimeout(modalTimerRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!selected || !detailOpen) {
+    if (!selected) {
       setEvents([]);
       return;
     }
     void fetchReportEvents(selected.id)
       .then((data) => setEvents(data as typeof events))
       .catch(() => setEvents([]));
-  }, [selected, detailOpen]);
-
-  useEffect(() => {
-    if (!detailOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeDetail();
-    };
-    window.addEventListener('keydown', onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [detailOpen, closeDetail]);
+  }, [selected]);
 
   const filtered = useMemo(() => {
     return reports
@@ -174,30 +124,6 @@ export function CraDashboard() {
     const resolved = reports.filter(
       (r) => r.status === 'accepted' || r.status === 'rejected',
     ).length;
-    const byPriority = {
-      Alto: open.filter((r) => r.priorityHint === 'Alto').length,
-      Medio: open.filter((r) => r.priorityHint === 'Medio').length,
-      Bajo: open.filter((r) => r.priorityHint === 'Bajo').length,
-      none: open.filter((r) => !r.priorityHint).length,
-    };
-    const byZone = new Map<string, { total: number; alto: number }>();
-    for (const r of open) {
-      const zone =
-        r.locality ||
-        r.unitHydro ||
-        r.zoneHydro ||
-        (r.priorityHint ? 'Con cobertura C.R.A.' : 'Sin zona / fuera de cobertura');
-      const row = byZone.get(zone) ?? { total: 0, alto: 0 };
-      row.total += 1;
-      if (r.priorityHint === 'Alto' || r.hasPreliminaryAlert || r.status === 'alerted') {
-        row.alto += 1;
-      }
-      byZone.set(zone, row);
-    }
-    const zones = [...byZone.entries()]
-      .map(([name, v]) => ({ name, ...v }))
-      .sort((a, b) => b.alto - a.alto || b.total - a.total)
-      .slice(0, 6);
     return {
       open: open.length,
       critical: critical.length,
@@ -206,8 +132,6 @@ export function CraDashboard() {
         reports.length === 0 ? 0 : Math.round((resolved / reports.length) * 100),
       resolved,
       total: reports.length,
-      byPriority,
-      zones,
     };
   }, [reports]);
 
@@ -262,152 +186,6 @@ export function CraDashboard() {
         />
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h2 className="text-sm font-bold text-slate-900">Zonas de impacto</h2>
-            <p className="text-xs text-slate-500">
-              Reportes abiertos por prioridad C.R.A. · lo crítico primero
-            </p>
-          </div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-            Ordenados por urgencia en la bandeja
-          </p>
-        </div>
-        <div className="mt-3 flex h-3 overflow-hidden rounded-full bg-slate-100">
-          {(
-            [
-              ['Alto', summary.byPriority.Alto, '#dc2626'],
-              ['Medio', summary.byPriority.Medio, '#f59e0b'],
-              ['Bajo', summary.byPriority.Bajo, '#10b981'],
-              ['Sin cobertura', summary.byPriority.none, '#94a3b8'],
-            ] as const
-          ).map(([label, count, color]) =>
-            count > 0 ? (
-              <button
-                key={label}
-                type="button"
-                title={`${label}: ${count}`}
-                aria-label={`Filtrar ${label}: ${count}`}
-                className="h-full transition hover:opacity-90"
-                style={{
-                  width: `${Math.max(4, (count / Math.max(1, summary.open)) * 100)}%`,
-                  backgroundColor: color,
-                }}
-                onClick={() =>
-                  setPriorityFilter(
-                    label === 'Sin cobertura'
-                      ? priorityFilter === 'none'
-                        ? 'all'
-                        : 'none'
-                      : priorityFilter === label
-                        ? 'all'
-                        : label,
-                  )
-                }
-              />
-            ) : null,
-          )}
-        </div>
-        <div className="mt-2 flex flex-wrap gap-3 text-xs">
-          {(
-            [
-              ['Alto', summary.byPriority.Alto, 'text-red-700'],
-              ['Medio', summary.byPriority.Medio, 'text-amber-700'],
-              ['Bajo', summary.byPriority.Bajo, 'text-emerald-700'],
-              ['Sin cobertura', summary.byPriority.none, 'text-slate-500'],
-            ] as const
-          ).map(([label, count, tone]) => (
-            <span key={label} className={`font-semibold ${tone}`}>
-              {label === 'Alto' ? 'Alta' : label === 'Medio' ? 'Media' : label === 'Bajo' ? 'Baja' : label}:{' '}
-              {count}
-            </span>
-          ))}
-        </div>
-
-        {officialImpact ? (
-          <div className="mt-4 border-t border-slate-100 pt-4">
-            <div className="flex flex-wrap items-end justify-between gap-2">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">Capas oficiales INVEMAR + C.R.A.</h3>
-                <p className="text-xs text-slate-500">
-                  {officialImpact.source.invemar} · {officialImpact.source.cra}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2 text-[11px]">
-                {officialImpact.craPriorityCounts.map((c) => (
-                  <span
-                    key={c.priority}
-                    className={`rounded-full border px-2 py-0.5 font-bold ${priorityStyle(c.priority).badge}`}
-                  >
-                    C.R.A. {c.priority}: {c.count.toLocaleString('es-CO')}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <ul className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-              {officialImpact.zones.slice(0, 9).map((z) => {
-                const score = Number(z.impactScore) || 0;
-                const tone =
-                  score >= 2.5
-                    ? 'border-red-200 bg-red-50'
-                    : score >= 1.5
-                      ? 'border-amber-200 bg-amber-50'
-                      : 'border-emerald-200 bg-emerald-50';
-                return (
-                  <li
-                    key={z.locality}
-                    className={`rounded-xl border p-3 text-xs ${tone}`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="font-bold text-slate-900">{z.locality}</p>
-                      <span className="shrink-0 font-black text-slate-700">
-                        {score.toFixed(1)}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-slate-600">
-                      {Number(z.hectares).toLocaleString('es-CO')} ha · {z.dominantSpecies ?? '—'} ·{' '}
-                      {z.managementZone ?? '—'}
-                    </p>
-                    <p className="mt-1 text-slate-700">
-                      <span className="font-semibold">{z.intervention ?? 'Sin dato'}</span>
-                      {' · '}
-                      degradación {z.degradation ?? '—'}
-                      {z.currentUse ? ` · uso: ${z.currentUse}` : ''}
-                    </p>
-                    {z.landConflict ? (
-                      <p className="mt-1 text-[11px] text-slate-500">{z.landConflict}</p>
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ) : null}
-
-        {summary.zones.length > 0 ? (
-          <div className="mt-4 border-t border-slate-100 pt-3">
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-              Cruces con reportes ciudadanos abiertos
-            </p>
-            <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {summary.zones.map((z) => (
-                <li
-                  key={z.name}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-xs"
-                >
-                  <span className="min-w-0 truncate font-semibold text-slate-800" title={z.name}>
-                    {z.name}
-                  </span>
-                  <span className="shrink-0 text-slate-600">
-                    {z.total} · <span className="font-bold text-red-700">{z.alto} críticos</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-      </section>
       {loadError ? (
         <p
           className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800"
@@ -419,13 +197,10 @@ export function CraDashboard() {
       ) : null}
 
       <div className="grid items-stretch gap-4 lg:grid-cols-[1.55fr_1fr] lg:gap-5">
-        <section id="mapa-cra" className="flex min-w-0 flex-col scroll-mt-4">
+        <section className="flex min-w-0 flex-col">
           <GuardianesMap
             mode="overview"
             reports={filtered}
-            focusReportId={selected?.id ?? null}
-            focusToken={focusToken}
-            onSelectReport={openReport}
             showCraPolygons
             showInvemarPolygons
             className="flex-1"
