@@ -1,7 +1,7 @@
 # GEO_IMPORT — pipeline reproducible
 
-**Estado:** `IMPLEMENTED` (inspección + normalización + schema/consultas)  
-**Carga PostGIS en un proyecto Supabase real:** `PENDING` (requiere credenciales / DATABASE_URL)
+**Estado:** `IMPLEMENTED` (inspección + normalización + schema/consultas + carga Supabase)  
+**Carga PostGIS en Supabase (`guardianes-del-manglar`):** `IMPLEMENTED` (14 732 features)
 
 ---
 
@@ -78,7 +78,17 @@ Aplicar cuando exista base con PostGIS (Supabase):
 psql "$DATABASE_URL" -f packages/database/src/migrations/001_geographic.sql
 ```
 
-La carga masiva desde `features.ndjson` hacia Supabase queda `PENDING` hasta configurar `DATABASE_URL` / service role (sin fingir integración).
+Carga masiva (idempotente por `layer.code`):
+
+```bash
+# Requiere .supabase-project.env con DATABASE_POOLER_URL o
+# SUPABASE_PROJECT_REF + DATABASE_PASSWORD (no commitear)
+pnpm geo:load-supabase
+# smoke: node tools/geo-import/scripts/load-supabase.mjs --limit 100
+```
+
+Script: `tools/geo-import/scripts/load-supabase.mjs`  
+Usa pooler IPv4 (`aws-2-<region>.pooler.supabase.com:5432`, session mode) porque el host `db.*` suele ser solo IPv6. Aplica `ST_Force2D` + `ST_MakeValid` al insertar.
 
 Lectura del SQL desde código:
 

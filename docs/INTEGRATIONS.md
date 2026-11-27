@@ -57,7 +57,7 @@ No hay proyecto enlazado en este repo todavía.
 | Ubicación actual | Material de trabajo en carpeta host `ManglarHack/docs/` (fuera de este Git) |
 | En este repo | `data/raw` / `data/processed` aún `PENDING` (y licencia X7) |
 | Pipeline | `tools/geo-import` inspección + normalización `IMPLEMENTED` |
-| Persistencia | migración PostGIS `IMPLEMENTED` · carga live Supabase `PENDING` |
+| Persistencia | migración PostGIS `IMPLEMENTED` · carga live Supabase `IMPLEMENTED` (14 732 features) |
 | Uso runtime | PostGIS GiST (autoritativo) + consulta NDJSON local de verificación |
 | Estado integración | Raw/processed locales `IMPLEMENTED` · DB remota `PENDING` |
 
