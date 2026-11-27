@@ -19,8 +19,9 @@ npx vercel link             # crea .vercel/ (gitignored)
 # Copia orgId / projectId a los secrets de GitHub
 ```
 
-Root Directory en Vercel: **.** (raíz del repo).  
-Framework: Next.js — ver `vercel.json`.
+Root Directory en Vercel: **`apps/web`**.  
+Framework: Next.js — ver `apps/web/vercel.json`.  
+Node.js en el proyecto Vercel: **22.x**.
 
 ## Flujo
 
