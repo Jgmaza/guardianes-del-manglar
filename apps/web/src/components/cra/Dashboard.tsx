@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { TramitesTab } from '@/components/cra/TramitesTab';
+import { TramitesList } from '@/components/cra/TramitesTab';
 import {
   createAlert,
   fetchDashboardReports,
@@ -42,7 +42,7 @@ const GuardianesMap = dynamic(
   { ssr: false },
 );
 
-type CraTab = 'operativo' | 'tramites';
+type PanelTab = 'alertas' | 'tramites';
 
 const STATUSES = [
   'submitted',
@@ -55,7 +55,7 @@ const STATUSES = [
 ] as const;
 
 export function CraDashboard() {
-  const [tab, setTab] = useState<CraTab>('operativo');
+  const [tab, setTab] = useState<PanelTab>('alertas');
   const [reports, setReports] = useState<DashboardReport[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -71,30 +71,41 @@ export function CraDashboard() {
   const [loading, setLoading] = useState(true);
   const modalTimerRef = useRef<number | null>(null);
 
+  const webReports = useMemo(
+    () => reports.filter((r) => r.channel === 'pwa'),
+    [reports],
+  );
+
   const pendingTramites = useMemo(
     () =>
-      reports.filter(
+      webReports.filter(
         (r) =>
-          r.channel === 'pwa' &&
-          (r.status === 'submitted' ||
-            r.status === 'geo_processed' ||
-            r.status === 'needs_info' ||
-            r.status === 'under_review'),
+          r.status === 'submitted' ||
+          r.status === 'geo_processed' ||
+          r.status === 'needs_info' ||
+          r.status === 'under_review',
       ).length,
-    [reports],
+    [webReports],
   );
 
   const closeDetail = useCallback(() => setDetailOpen(false), []);
 
-  /** Click en listado (o marcador): centra el mapa y abre el modal */
-  const openReport = useCallback((report: DashboardReport) => {
-    setSelected(report);
-    setFocusToken((n) => n + 1);
-    setMessage(null);
-    document.getElementById('mapa-cra')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    if (modalTimerRef.current) window.clearTimeout(modalTimerRef.current);
-    modalTimerRef.current = window.setTimeout(() => setDetailOpen(true), 550);
-  }, []);
+  /** Click en listado (o marcador): centra el mapa; en Alertas abre modal */
+  const openReport = useCallback(
+    (report: DashboardReport, openModal = true) => {
+      setSelected(report);
+      setFocusToken((n) => n + 1);
+      setMessage(null);
+      document.getElementById('mapa-cra')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (modalTimerRef.current) window.clearTimeout(modalTimerRef.current);
+      if (openModal) {
+        modalTimerRef.current = window.setTimeout(() => setDetailOpen(true), 550);
+      } else {
+        setDetailOpen(false);
+      }
+    },
+    [],
+  );
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -144,7 +155,7 @@ export function CraDashboard() {
     };
   }, [detailOpen, closeDetail]);
 
-  const filtered = useMemo(() => {
+  const filteredAlertas = useMemo(() => {
     return reports
       .filter((r) => {
         if (statusFilter !== 'all' && r.status !== statusFilter) return false;
@@ -167,7 +178,29 @@ export function CraDashboard() {
       });
   }, [reports, statusFilter, priorityFilter, categoryFilter]);
 
+  /** Mapa siempre visible: muestra la lista de la pestaña activa. */
+  const mapReports = tab === 'tramites' ? webReports : filteredAlertas;
+
   const summary = useMemo(() => {
+    if (tab === 'tramites') {
+      const pending = webReports.filter(
+        (r) =>
+          r.status === 'submitted' ||
+          r.status === 'geo_processed' ||
+          r.status === 'needs_info',
+      ).length;
+      const review = webReports.filter((r) => r.status === 'under_review').length;
+      const accepted = webReports.filter((r) => r.status === 'accepted').length;
+      const rejected = webReports.filter((r) => r.status === 'rejected').length;
+      return {
+        kind: 'tramites' as const,
+        pending,
+        review,
+        accepted,
+        rejected,
+        total: webReports.length,
+      };
+    }
     const open = reports.filter((r) => isOpenReport(r.status));
     const critical = open.filter(
       (r) =>
@@ -178,15 +211,15 @@ export function CraDashboard() {
       (r) => r.status === 'accepted' || r.status === 'rejected',
     ).length;
     return {
+      kind: 'alertas' as const,
       open: open.length,
       critical: critical.length,
       underReview,
-      resolvedPct:
-        reports.length === 0 ? 0 : Math.round((resolved / reports.length) * 100),
+      resolvedPct: reports.length === 0 ? 0 : Math.round((resolved / reports.length) * 100),
       resolved,
       total: reports.length,
     };
-  }, [reports]);
+  }, [tab, reports, webReports]);
 
   const categoryOptions = useMemo(() => {
     const codes = reports
@@ -208,45 +241,71 @@ export function CraDashboard() {
 
   return (
     <div className="space-y-5">
-      <div
-        className="flex overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-sm"
-        role="tablist"
-        aria-label="Secciones del panel C.R.A."
-      >
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'operativo'}
-          onClick={() => setTab('operativo')}
-          className={`flex flex-1 items-center justify-center gap-2 border-b-4 px-3 py-3 text-sm font-semibold transition ${
-            tab === 'operativo'
-              ? 'border-emerald-600 bg-white text-mg-900'
-              : 'border-transparent text-slate-600 hover:bg-white'
-          }`}
-        >
-          <BellRing className="h-4 w-4" aria-hidden />
-          Operativo
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'tramites'}
-          onClick={() => setTab('tramites')}
-          className={`flex flex-1 items-center justify-center gap-2 border-b-4 px-3 py-3 text-sm font-semibold transition ${
-            tab === 'tramites'
-              ? 'border-emerald-600 bg-white text-mg-900'
-              : 'border-transparent text-slate-600 hover:bg-white'
-          }`}
-        >
-          <ClipboardList className="h-4 w-4" aria-hidden />
-          Trámites
-          {pendingTramites > 0 ? (
-            <span className="rounded-full bg-blue-700 px-2 py-0.5 text-[11px] font-bold text-white">
-              {pendingTramites}
-            </span>
-          ) : null}
-        </button>
-      </div>
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {summary.kind === 'alertas' ? (
+          <>
+            <Stat
+              icon={BellRing}
+              tone="bg-amber-100 text-amber-800"
+              label="Activos"
+              hint="Sin cerrar"
+              value={loading ? '…' : String(summary.open)}
+            />
+            <Stat
+              icon={OctagonAlert}
+              tone="bg-red-100 text-red-700"
+              label="Críticos"
+              hint="Prioridad alta o alerta"
+              value={String(summary.critical)}
+            />
+            <Stat
+              icon={Timer}
+              tone="bg-mg-50 text-mg-800"
+              label="En atención"
+              hint="En revisión C.R.A."
+              value={String(summary.underReview)}
+            />
+            <Stat
+              icon={CheckCircle2}
+              tone="bg-emerald-100 text-emerald-800"
+              label="Resolución"
+              hint={`${summary.resolved} de ${summary.total}`}
+              value={`${summary.resolvedPct}%`}
+            />
+          </>
+        ) : (
+          <>
+            <Stat
+              icon={ClipboardList}
+              tone="bg-amber-100 text-amber-800"
+              label="Pendientes"
+              hint="Por tomar"
+              value={loading ? '…' : String(summary.pending)}
+            />
+            <Stat
+              icon={Eye}
+              tone="bg-mg-50 text-mg-800"
+              label="En revisión"
+              hint="En atención C.R.A."
+              value={String(summary.review)}
+            />
+            <Stat
+              icon={CheckCircle2}
+              tone="bg-emerald-100 text-emerald-800"
+              label="Aprobados"
+              hint="Aceptados"
+              value={String(summary.accepted)}
+            />
+            <Stat
+              icon={XCircle}
+              tone="bg-slate-100 text-slate-600"
+              label="Rechazados"
+              hint={`${summary.total} registros web`}
+              value={String(summary.rejected)}
+            />
+          </>
+        )}
+      </section>
 
       {loadError ? (
         <p
@@ -258,51 +317,14 @@ export function CraDashboard() {
         </p>
       ) : null}
 
-      {tab === 'tramites' ? (
-        <TramitesTab reports={reports} loading={loading} onRefresh={refresh} />
-      ) : null}
-
-      {tab === 'operativo' ? (
-      <>
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat
-          icon={BellRing}
-          tone="bg-amber-100 text-amber-800"
-          label="Activos"
-          hint="Sin cerrar"
-          value={loading ? '…' : String(summary.open)}
-        />
-        <Stat
-          icon={OctagonAlert}
-          tone="bg-red-100 text-red-700"
-          label="Críticos"
-          hint="Prioridad alta o alerta"
-          value={String(summary.critical)}
-        />
-        <Stat
-          icon={Timer}
-          tone="bg-mg-50 text-mg-800"
-          label="En atención"
-          hint="En revisión C.R.A."
-          value={String(summary.underReview)}
-        />
-        <Stat
-          icon={CheckCircle2}
-          tone="bg-emerald-100 text-emerald-800"
-          label="Resolución"
-          hint={`${summary.resolved} de ${summary.total}`}
-          value={`${summary.resolvedPct}%`}
-        />
-      </section>
-
       <div className="grid items-stretch gap-4 lg:grid-cols-[1.55fr_1fr] lg:gap-5">
         <section id="mapa-cra" className="flex min-w-0 flex-col scroll-mt-4">
           <GuardianesMap
             mode="overview"
-            reports={filtered}
+            reports={mapReports}
             focusReportId={selected?.id ?? null}
             focusToken={focusToken}
-            onSelectReport={openReport}
+            onSelectReport={(r) => openReport(r, tab === 'alertas')}
             showCraPolygons
             showInvemarPolygons
             className="flex-1"
@@ -310,107 +332,161 @@ export function CraDashboard() {
           />
         </section>
 
-        <section className="flex min-h-[420px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:min-h-0 lg:h-full lg:max-h-[720px]">
-          <div className="border-b border-slate-200 bg-slate-50 p-4">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
-                <BellRing className="h-4 w-4 text-mg-800" aria-hidden />
-                Bandeja por impacto
-              </h2>
-              <span className="rounded-full bg-mg-900 px-2.5 py-0.5 text-xs font-bold text-white">
-                {filtered.length}
-              </span>
-            </div>
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              <Filter
-                label="Estado"
-                value={statusFilter}
-                onChange={setStatusFilter}
-                options={['all', ...STATUSES]}
-                format={statusLabel}
-              />
-              <Filter
-                label="Prioridad"
-                value={priorityFilter}
-                onChange={setPriorityFilter}
-                options={['all', 'Alto', 'Medio', 'Bajo', 'none']}
-                format={(v) => (v === 'none' ? 'Sin cobertura' : priorityStyle(v).label)}
-              />
-              <Filter
-                label="Categoría"
-                value={categoryFilter}
-                onChange={setCategoryFilter}
-                options={categoryOptions}
-              />
-            </div>
+        <aside className="flex min-h-[420px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:min-h-0 lg:h-full lg:max-h-[720px]">
+          <div
+            className="flex border-b border-slate-200 bg-slate-50"
+            role="tablist"
+            aria-label="Bandeja del mapa"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'alertas'}
+              onClick={() => {
+                setTab('alertas');
+                setSelected(null);
+                setDetailOpen(false);
+              }}
+              className={`flex flex-1 items-center justify-center gap-1.5 border-b-4 px-2 py-3 text-sm font-semibold transition ${
+                tab === 'alertas'
+                  ? 'border-emerald-600 bg-white text-mg-900'
+                  : 'border-transparent text-slate-600 hover:bg-white'
+              }`}
+            >
+              <BellRing className="h-4 w-4" aria-hidden />
+              Alertas
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'tramites'}
+              onClick={() => {
+                setTab('tramites');
+                setSelected(null);
+                setDetailOpen(false);
+              }}
+              className={`flex flex-1 items-center justify-center gap-1.5 border-b-4 px-2 py-3 text-sm font-semibold transition ${
+                tab === 'tramites'
+                  ? 'border-emerald-600 bg-white text-mg-900'
+                  : 'border-transparent text-slate-600 hover:bg-white'
+              }`}
+            >
+              <ClipboardList className="h-4 w-4" aria-hidden />
+              Trámites
+              {pendingTramites > 0 ? (
+                <span className="rounded-full bg-blue-700 px-2 py-0.5 text-[11px] font-bold text-white">
+                  {pendingTramites}
+                </span>
+              ) : null}
+            </button>
           </div>
 
-          <div className="flex-1 space-y-3 overflow-y-auto bg-slate-50/60 p-3">
-            {filtered.length === 0 && !loading ? (
-              <p className="rounded-xl border-2 border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500">
-                {reports.length === 0
-                  ? 'Aún no hay reportes ciudadanos. Los que lleguen desde la app o WhatsApp aparecerán aquí.'
-                  : 'No hay reportes con estos filtros.'}
-              </p>
-            ) : null}
-            {filtered.map((report) => {
-              const pri = priorityStyle(report.priorityHint);
-              const active = selected?.id === report.id;
-              return (
-                <button
-                  key={report.id}
-                  type="button"
-                  onClick={() => openReport(report)}
-                  aria-pressed={active}
-                  style={{ borderLeftColor: pri.color }}
-                  className={`w-full rounded-xl border border-l-4 bg-white p-3 text-left shadow-sm transition hover:shadow-md ${
-                    active ? 'border-mg-600 ring-2 ring-mg-400/40' : 'border-slate-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className={`rounded border px-2 py-0.5 text-[11px] font-bold ${pri.badge}`}>
-                      {pri.label}
-                    </span>
-                    <span className="flex items-center gap-1 text-xs text-slate-500">
-                      <Clock3 className="h-3 w-3" aria-hidden />
-                      {timeAgo(report.receivedAt, now)}
-                    </span>
-                  </div>
-                  <p className="mt-2 font-[family-name:var(--font-mono)] text-sm font-bold text-slate-900">
-                    {report.trackingCode}
+          {tab === 'alertas' ? (
+            <>
+              <div className="border-b border-slate-100 px-4 py-2">
+                <p className="text-xs text-slate-600">
+                  Ordenadas por impacto · clic para ubicar en el mapa
+                </p>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  <Filter
+                    label="Estado"
+                    value={statusFilter}
+                    onChange={setStatusFilter}
+                    options={['all', ...STATUSES]}
+                    format={statusLabel}
+                  />
+                  <Filter
+                    label="Prioridad"
+                    value={priorityFilter}
+                    onChange={setPriorityFilter}
+                    options={['all', 'Alto', 'Medio', 'Bajo', 'none']}
+                    format={(v) => (v === 'none' ? 'Sin cobertura' : priorityStyle(v).label)}
+                  />
+                  <Filter
+                    label="Categoría"
+                    value={categoryFilter}
+                    onChange={setCategoryFilter}
+                    options={categoryOptions}
+                  />
+                </div>
+              </div>
+
+              <div className="flex-1 space-y-3 overflow-y-auto bg-slate-50/60 p-3">
+                {filteredAlertas.length === 0 && !loading ? (
+                  <p className="rounded-xl border-2 border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500">
+                    {reports.length === 0
+                      ? 'Aún no hay reportes ciudadanos. Los que lleguen desde la app o WhatsApp aparecerán aquí.'
+                      : 'No hay reportes con estos filtros.'}
                   </p>
-                  <p className="mt-1 line-clamp-2 text-sm text-slate-600">{report.description}</p>
-                  <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
-                    {report.categoryLabel ?? report.categoryCode ? (
-                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-700">
-                        {report.categoryLabel ?? report.categoryCode}
-                      </span>
-                    ) : null}
-                    {report.dominantSpecies ? (
-                      <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-emerald-800">
-                        {report.dominantSpecies}
-                      </span>
-                    ) : null}
-                    <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-700">
-                      {report.evidenceCount} evidencia(s)
-                    </span>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between gap-2 border-t border-slate-100 pt-2">
-                    <span className="flex items-center gap-1 font-[family-name:var(--font-mono)] text-[11px] text-slate-500">
-                      <MapPin className="h-3 w-3" aria-hidden />
-                      {report.location.latitude.toFixed(4)}, {report.location.longitude.toFixed(4)}
-                    </span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${statusTone(report.status)}`}
+                ) : null}
+                {filteredAlertas.map((report) => {
+                  const pri = priorityStyle(report.priorityHint);
+                  const active = selected?.id === report.id;
+                  return (
+                    <button
+                      key={report.id}
+                      type="button"
+                      onClick={() => openReport(report)}
+                      aria-pressed={active}
+                      style={{ borderLeftColor: pri.color }}
+                      className={`w-full rounded-xl border border-l-4 bg-white p-3 text-left shadow-sm transition hover:shadow-md ${
+                        active ? 'border-mg-600 ring-2 ring-mg-400/40' : 'border-slate-200'
+                      }`}
                     >
-                      {statusLabel(report.status)}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </section>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className={`rounded border px-2 py-0.5 text-[11px] font-bold ${pri.badge}`}>
+                          {pri.label}
+                        </span>
+                        <span className="flex items-center gap-1 text-xs text-slate-500">
+                          <Clock3 className="h-3 w-3" aria-hidden />
+                          {timeAgo(report.receivedAt, now)}
+                        </span>
+                      </div>
+                      <p className="mt-2 font-[family-name:var(--font-mono)] text-sm font-bold text-slate-900">
+                        {report.trackingCode}
+                      </p>
+                      <p className="mt-1 line-clamp-2 text-sm text-slate-600">{report.description}</p>
+                      <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
+                        {report.categoryLabel ?? report.categoryCode ? (
+                          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-700">
+                            {report.categoryLabel ?? report.categoryCode}
+                          </span>
+                        ) : null}
+                        {report.dominantSpecies ? (
+                          <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-emerald-800">
+                            {report.dominantSpecies}
+                          </span>
+                        ) : null}
+                        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-700">
+                          {report.evidenceCount} evidencia(s)
+                        </span>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between gap-2 border-t border-slate-100 pt-2">
+                        <span className="flex items-center gap-1 font-[family-name:var(--font-mono)] text-[11px] text-slate-500">
+                          <MapPin className="h-3 w-3" aria-hidden />
+                          {report.location.latitude.toFixed(4)}, {report.location.longitude.toFixed(4)}
+                        </span>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${statusTone(report.status)}`}
+                        >
+                          {statusLabel(report.status)}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <TramitesList
+              reports={reports}
+              loading={loading}
+              selectedId={selected?.id ?? null}
+              onSelect={(r) => openReport(r, false)}
+              onRefresh={refresh}
+            />
+          )}
+        </aside>
       </div>
 
       {detailOpen && selected ? (
@@ -611,8 +687,6 @@ export function CraDashboard() {
             </div>
           </div>
         </div>
-      ) : null}
-      </>
       ) : null}
     </div>
   );
