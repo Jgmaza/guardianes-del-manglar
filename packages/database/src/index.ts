@@ -1,9 +1,11 @@
 export {
+  createReportsPersistenceClient,
   createSupabaseBrowserClient,
   createSupabaseServiceClient,
 } from './client';
 export {
   getSupabasePublicConfig,
+  isReportsPersistenceConfigured,
   isSupabaseConfigured,
   isSupabaseGeoConfigured,
   isSupabaseServiceConfigured,

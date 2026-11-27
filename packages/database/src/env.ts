@@ -29,8 +29,7 @@ export function isSupabaseConfigured(env: NodeJS.ProcessEnv = process.env): bool
 }
 
 /**
- * Server-side persistence gate: public Supabase config + service role key.
- * When false, report API stays in-memory (demo/foundation mode).
+ * True when SUPABASE_SERVICE_ROLE_KEY is present (preferred for server writes).
  */
 export function isSupabaseServiceConfigured(
   env: NodeJS.ProcessEnv = process.env,
@@ -38,11 +37,25 @@ export function isSupabaseServiceConfigured(
   if (env.NEXT_PUBLIC_ENABLE_SUPABASE === 'false') {
     return false;
   }
+  const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim() ?? '';
+  return isSupabaseConfigured(env) && serviceKey.length > 0;
+}
+
+/**
+ * Reports API may persist when Supabase public config is on.
+ * Prefers service role; falls back to anon if tables have no RLS (hackathon).
+ * Force memory with REPORTS_PERSISTENCE=memory.
+ */
+export function isReportsPersistenceConfigured(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
   if (env.REPORTS_PERSISTENCE === 'memory') {
     return false;
   }
-  const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim() ?? '';
-  return isSupabaseConfigured(env) && serviceKey.length > 0;
+  if (env.NEXT_PUBLIC_ENABLE_SUPABASE === 'false') {
+    return false;
+  }
+  return isSupabaseConfigured(env);
 }
 
 /**
