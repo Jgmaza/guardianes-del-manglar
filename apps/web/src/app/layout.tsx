@@ -1,19 +1,12 @@
 import type { Metadata, Viewport } from 'next';
-import { Roboto, Roboto_Mono } from 'next/font/google';
+import '@fontsource/roboto/latin-400.css';
+import '@fontsource/roboto/latin-500.css';
+import '@fontsource/roboto/latin-700.css';
+import '@fontsource/roboto/latin-900.css';
+import '@fontsource/roboto-mono/latin-400.css';
 import type { ReactNode } from 'react';
 import { RegisterSW } from '@/components/pwa/RegisterSW';
 import './globals.css';
-
-const sans = Roboto({
-  subsets: ['latin'],
-  weight: ['400', '500', '700', '900'],
-  variable: '--font-sans',
-});
-
-const mono = Roboto_Mono({
-  subsets: ['latin'],
-  variable: '--font-mono',
-});
 
 export const metadata: Metadata = {
   title: 'Guardianes del Manglar',
@@ -32,7 +25,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="es" className={`${sans.variable} ${mono.variable}`}>
+    <html lang="es">
       <body className="font-[family-name:var(--font-sans)] antialiased">
         <RegisterSW />
         {children}
