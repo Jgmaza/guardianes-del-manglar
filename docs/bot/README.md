@@ -1,12 +1,24 @@
 # Bot — decisión y clasificación
 
-Árbol de decisión y taxonomía de alertas del WhatsApp bot.
+Árbol de decisión y taxonomía de alertas del WhatsApp / demo web **Manglar Alerta**.
 
-## Contenido
+## Índice
 
-1. [Árbol de decisión](./arbol-decision.md) (flujo + prioridades + referencias)
-2. Código vivo: `apps/whatsapp-bot/data.js` (matriz) y `engine.js` (triage)
-3. Demo web: `apps/whatsapp-bot/` (`pnpm web`)
+| Doc | Contenido |
+|-----|-----------|
+| [arbol-decision.md](./arbol-decision.md) | Flujo, reglas, prioridades, matriz 5×3×3 |
+| [arbol-decision.json](./arbol-decision.json) | Mismo árbol en JSON (pasos + opciones) |
+| [referencias.md](./referencias.md) | Fuentes UNGRD / ANLA / Ley 1333 / contactos |
+| [reports-mapping.md](./reports-mapping.md) | Mapeo triage → `POST /api/v1/reports` |
+
+## Código vivo
+
+| Archivo | Rol |
+|---------|-----|
+| `apps/whatsapp-bot/data.js` | `MENSAJES` (nodos) + `REGLAS` (45 rutas) + `NIVEL_META` |
+| `apps/whatsapp-bot/engine.js` | Máquina de estados del chat |
+| `apps/whatsapp-bot/bot/twilio-server.js` | WhatsApp Twilio + POST API |
+| `apps/whatsapp-bot/app.js` | Demo web |
 
 ## Clasificación de alertas
 
@@ -21,9 +33,8 @@
 | Modo | Comportamiento |
 |------|----------------|
 | `ANONIMO` | Orientación sin pedir nombre |
-| `IDENTIFICADO` | Sugiere dejar datos al radicar (seguimiento) |
+| `IDENTIFICADO` | Sugiere seguimiento con código de la API |
 
-## Referencias citadas
+## Completitud
 
-Tabla completa: [referencias.md](./referencias.md).  
-Mapeo a la API de reportes: [reports-mapping.md](./reports-mapping.md).
+Matriz **tipo × nivel × zona** = **45/45** celdas definidas (sin huecos).
