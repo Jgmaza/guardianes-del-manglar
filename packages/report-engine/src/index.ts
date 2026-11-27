@@ -31,6 +31,7 @@ export {
 export {
   TRIAGE_CATEGORY_DEFS,
   createTriageCategoryCatalog,
+  isAvistamientoCategory,
   triageTipoToCategoryCode,
 } from './triage-categories';
 

@@ -29,7 +29,18 @@ export const TRIAGE_CATEGORY_DEFS = [
     label: 'Invasión de terreno o manglar',
     description: 'Categoría local del bot (no catálogo oficial C.R.A.).',
   },
+  {
+    code: 'avistamiento',
+    label: 'Yo estuve aquí / avistamiento',
+    description:
+      'Registro ciudadano de visita o biodiversidad (foto + ubicación). No es denuncia.',
+  },
 ] as const;
+
+/** True for citizen science / check-in sightings (not denuncias). */
+export function isAvistamientoCategory(code: string | null | undefined): boolean {
+  return code === 'avistamiento';
+}
 
 export function createTriageCategoryCatalog(now = new Date().toISOString()): ReportCategory[] {
   let catalog = createDefaultCategoryCatalog(now);

@@ -1,6 +1,6 @@
 'use client';
 
-import { ClipboardList, House, Camera, ShieldCheck, Trees, Users } from 'lucide-react';
+import { Award, ClipboardList, House, Camera, ShieldCheck, Trees, Users } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -9,6 +9,7 @@ import { OnlineIndicator } from './OnlineIndicator';
 const CITIZEN_NAV = [
   { href: '/', label: 'Inicio', icon: House },
   { href: '/reportar', label: 'Reportar', icon: Camera },
+  { href: '/estuve-aqui', label: 'Yo estuve', icon: Award },
   { href: '/seguimiento', label: 'Seguimiento', icon: ClipboardList },
 ];
 

@@ -3,6 +3,7 @@
 import { Button } from '@guardianes/ui';
 import {
   BellRing,
+  Bird,
   CheckCircle2,
   ClipboardList,
   Clock3,
@@ -10,6 +11,7 @@ import {
   FileWarning,
   Info,
   MapPin,
+  Microscope,
   OctagonAlert,
   RefreshCw,
   Siren,
@@ -20,6 +22,7 @@ import {
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { BiodiversidadList } from '@/components/cra/BiodiversidadList';
 import { TramitesList } from '@/components/cra/TramitesTab';
 import {
   createAlert,
@@ -30,6 +33,7 @@ import {
 } from '@/lib/api-client';
 import {
   impactRank,
+  isAvistamiento,
   isOpenReport,
   priorityStyle,
   statusLabel,
@@ -42,7 +46,7 @@ const GuardianesMap = dynamic(
   { ssr: false },
 );
 
-type PanelTab = 'alertas' | 'tramites';
+type PanelTab = 'alertas' | 'biodiversidad' | 'tramites';
 
 const STATUSES = [
   'submitted',
@@ -71,21 +75,36 @@ export function CraDashboard() {
   const [loading, setLoading] = useState(true);
   const modalTimerRef = useRef<number | null>(null);
 
-  const webReports = useMemo(
-    () => reports.filter((r) => r.channel === 'pwa'),
+  const denunciaReports = useMemo(
+    () => reports.filter((r) => !isAvistamiento(r.categoryCode)),
+    [reports],
+  );
+
+  const webTramites = useMemo(
+    () => denunciaReports.filter((r) => r.channel === 'pwa'),
+    [denunciaReports],
+  );
+
+  const bioReports = useMemo(
+    () => reports.filter((r) => isAvistamiento(r.categoryCode)),
     [reports],
   );
 
   const pendingTramites = useMemo(
     () =>
-      webReports.filter(
+      webTramites.filter(
         (r) =>
           r.status === 'submitted' ||
           r.status === 'geo_processed' ||
           r.status === 'needs_info' ||
           r.status === 'under_review',
       ).length,
-    [webReports],
+    [webTramites],
+  );
+
+  const pendingBio = useMemo(
+    () => bioReports.filter((r) => r.status !== 'accepted' && r.status !== 'rejected').length,
+    [bioReports],
   );
 
   const closeDetail = useCallback(() => setDetailOpen(false), []);
@@ -156,7 +175,7 @@ export function CraDashboard() {
   }, [detailOpen, closeDetail]);
 
   const filteredAlertas = useMemo(() => {
-    return reports
+    return denunciaReports
       .filter((r) => {
         if (statusFilter !== 'all' && r.status !== statusFilter) return false;
         if (priorityFilter === 'none' && r.priorityHint) return false;
@@ -176,38 +195,63 @@ export function CraDashboard() {
         if (byImpact !== 0) return byImpact;
         return new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime();
       });
-  }, [reports, statusFilter, priorityFilter, categoryFilter]);
+  }, [denunciaReports, statusFilter, priorityFilter, categoryFilter]);
 
   /** Mapa siempre visible: muestra la lista de la pestaña activa. */
-  const mapReports = tab === 'tramites' ? webReports : filteredAlertas;
+  const mapReports =
+    tab === 'tramites' ? webTramites : tab === 'biodiversidad' ? bioReports : filteredAlertas;
 
   const summary = useMemo(() => {
     if (tab === 'tramites') {
-      const pending = webReports.filter(
+      const pending = webTramites.filter(
         (r) =>
           r.status === 'submitted' ||
           r.status === 'geo_processed' ||
           r.status === 'needs_info',
       ).length;
-      const review = webReports.filter((r) => r.status === 'under_review').length;
-      const accepted = webReports.filter((r) => r.status === 'accepted').length;
-      const rejected = webReports.filter((r) => r.status === 'rejected').length;
+      const review = webTramites.filter((r) => r.status === 'under_review').length;
+      const accepted = webTramites.filter((r) => r.status === 'accepted').length;
+      const rejected = webTramites.filter((r) => r.status === 'rejected').length;
       return {
         kind: 'tramites' as const,
         pending,
         review,
         accepted,
         rejected,
-        total: webReports.length,
+        total: webTramites.length,
       };
     }
-    const open = reports.filter((r) => isOpenReport(r.status));
+    if (tab === 'biodiversidad') {
+      const pending = bioReports.filter(
+        (r) => r.status !== 'accepted' && r.status !== 'rejected',
+      ).length;
+      const validated = bioReports.filter((r) => r.status === 'accepted').length;
+      const species = new Set(
+        bioReports.flatMap((r) => {
+          const line = (r.description ?? '').split('\n').find((l) => l.startsWith('Especies:'));
+          if (!line) return [] as string[];
+          return line
+            .replace(/^Especies:\s*/i, '')
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
+        }),
+      );
+      return {
+        kind: 'biodiversidad' as const,
+        total: bioReports.length,
+        pending,
+        validated,
+        species: species.size,
+      };
+    }
+    const open = denunciaReports.filter((r) => isOpenReport(r.status));
     const critical = open.filter(
       (r) =>
         r.priorityHint === 'Alto' || r.hasPreliminaryAlert || r.status === 'alerted',
     );
-    const underReview = reports.filter((r) => r.status === 'under_review').length;
-    const resolved = reports.filter(
+    const underReview = denunciaReports.filter((r) => r.status === 'under_review').length;
+    const resolved = denunciaReports.filter(
       (r) => r.status === 'accepted' || r.status === 'rejected',
     ).length;
     return {
@@ -215,18 +259,21 @@ export function CraDashboard() {
       open: open.length,
       critical: critical.length,
       underReview,
-      resolvedPct: reports.length === 0 ? 0 : Math.round((resolved / reports.length) * 100),
+      resolvedPct:
+        denunciaReports.length === 0
+          ? 0
+          : Math.round((resolved / denunciaReports.length) * 100),
       resolved,
-      total: reports.length,
+      total: denunciaReports.length,
     };
-  }, [tab, reports, webReports]);
+  }, [tab, denunciaReports, webTramites, bioReports]);
 
   const categoryOptions = useMemo(() => {
-    const codes = reports
+    const codes = denunciaReports
       .map((r) => r.categoryCode)
       .filter((c): c is string => Boolean(c));
     return ['all', ...new Set(codes)];
-  }, [reports]);
+  }, [denunciaReports]);
 
   const runAction = async (action: () => Promise<string>) => {
     try {
@@ -271,6 +318,37 @@ export function CraDashboard() {
               label="Resolución"
               hint={`${summary.resolved} de ${summary.total}`}
               value={`${summary.resolvedPct}%`}
+            />
+          </>
+        ) : summary.kind === 'biodiversidad' ? (
+          <>
+            <Stat
+              icon={Bird}
+              tone="bg-emerald-100 text-emerald-800"
+              label="Registros"
+              hint="Fotos y avistamientos"
+              value={loading ? '…' : String(summary.total)}
+            />
+            <Stat
+              icon={Microscope}
+              tone="bg-amber-100 text-amber-800"
+              label="Por validar"
+              hint="Revisión de biólogos"
+              value={String(summary.pending)}
+            />
+            <Stat
+              icon={CheckCircle2}
+              tone="bg-mg-50 text-mg-800"
+              label="Validados"
+              hint="Aceptados C.R.A."
+              value={String(summary.validated)}
+            />
+            <Stat
+              icon={Bird}
+              tone="bg-lime-100 text-lime-800"
+              label="Especies"
+              hint="Etiquetas distintas"
+              value={String(summary.species)}
             />
           </>
         ) : (
@@ -347,7 +425,7 @@ export function CraDashboard() {
                 setSelected(null);
                 setDetailOpen(false);
               }}
-              className={`flex flex-1 items-center justify-center gap-1.5 border-b-4 px-2 py-3 text-sm font-semibold transition ${
+              className={`flex flex-1 items-center justify-center gap-1.5 border-b-4 px-1.5 py-3 text-sm font-semibold transition sm:px-2 ${
                 tab === 'alertas'
                   ? 'border-emerald-600 bg-white text-mg-900'
                   : 'border-transparent text-slate-600 hover:bg-white'
@@ -359,13 +437,37 @@ export function CraDashboard() {
             <button
               type="button"
               role="tab"
+              aria-selected={tab === 'biodiversidad'}
+              onClick={() => {
+                setTab('biodiversidad');
+                setSelected(null);
+                setDetailOpen(false);
+              }}
+              className={`flex flex-1 items-center justify-center gap-1.5 border-b-4 px-1.5 py-3 text-sm font-semibold transition sm:px-2 ${
+                tab === 'biodiversidad'
+                  ? 'border-emerald-600 bg-white text-mg-900'
+                  : 'border-transparent text-slate-600 hover:bg-white'
+              }`}
+            >
+              <Bird className="h-4 w-4" aria-hidden />
+              <span className="hidden sm:inline">Biodiversidad</span>
+              <span className="sm:hidden">Bio</span>
+              {pendingBio > 0 ? (
+                <span className="rounded-full bg-emerald-700 px-2 py-0.5 text-[11px] font-bold text-white">
+                  {pendingBio}
+                </span>
+              ) : null}
+            </button>
+            <button
+              type="button"
+              role="tab"
               aria-selected={tab === 'tramites'}
               onClick={() => {
                 setTab('tramites');
                 setSelected(null);
                 setDetailOpen(false);
               }}
-              className={`flex flex-1 items-center justify-center gap-1.5 border-b-4 px-2 py-3 text-sm font-semibold transition ${
+              className={`flex flex-1 items-center justify-center gap-1.5 border-b-4 px-1.5 py-3 text-sm font-semibold transition sm:px-2 ${
                 tab === 'tramites'
                   ? 'border-emerald-600 bg-white text-mg-900'
                   : 'border-transparent text-slate-600 hover:bg-white'
@@ -477,9 +579,17 @@ export function CraDashboard() {
                 })}
               </div>
             </>
+          ) : tab === 'biodiversidad' ? (
+            <BiodiversidadList
+              reports={reports}
+              loading={loading}
+              selectedId={selected?.id ?? null}
+              onSelect={(r) => openReport(r, false)}
+              onRefresh={refresh}
+            />
           ) : (
             <TramitesList
-              reports={reports}
+              reports={webTramites}
               loading={loading}
               selectedId={selected?.id ?? null}
               onSelect={(r) => openReport(r, false)}

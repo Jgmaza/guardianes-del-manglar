@@ -60,7 +60,7 @@ export function TramitesList({
   const webReports = useMemo(
     () =>
       reports
-        .filter((r) => r.channel === 'pwa')
+        .filter((r) => r.channel === 'pwa' && r.categoryCode !== 'avistamiento')
         .slice()
         .sort(
           (a, b) =>

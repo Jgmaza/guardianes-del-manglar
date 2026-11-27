@@ -75,7 +75,9 @@ export function ReportWizard() {
     window.addEventListener('online', syncOnline);
     window.addEventListener('offline', syncOnline);
     void fetchCategories()
-      .then((data) => setCategories(data))
+      .then((data) =>
+        setCategories(data.filter((c) => c.code !== 'avistamiento')),
+      )
       .catch(() =>
         setCategories([
           {
