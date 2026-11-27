@@ -1,46 +1,48 @@
 # Sistema de ramas — Guardianes del Manglar
 
-Mismo método que en el juego (Hold the Box).
+`main` y `dev` están **al mismo nivel**: se puede pushear a cualquiera; no hace falta PR entre ellas.
 
 | Rama | Para qué | Quién escribe |
 |---|---|---|
-| **`main`** | Producción / deploy **Vercel** | Solo **Jose**, vía PR **`dev` → `main`** |
-| **`dev`** | Integración diaria del equipo | Solo vía **PR** desde ramas de issue |
-| **`issue/<n>-slug`** | Trabajo de un issue concreto (sale de `dev`) | Quien tenga el issue asignado |
-| **`work/<persona>`** | Rama personal opcional (sync desde `dev`) | Cada quien |
+| **`main`** | Producción / deploy **Vercel** | Equipo (push directo) |
+| **`dev`** | Integración / pruebas | Equipo (push directo) |
+| **`issue/<n>-slug`** | Trabajo de un issue (opcional) | Quien tenga el issue |
+| **`work/<persona>`** | Rama personal opcional | Cada quien |
 
-CI corre en PRs a `dev`/`main`. Deploy a Vercel solo al entrar algo a **`main`** (workflow `Deploy Vercel`).
+CI puede correr en pushes/PRs a `dev`/`main`. Deploy a Vercel al entrar cambios a **`main`** (workflow `Deploy Vercel`).
 
 ## Flujo
 
 ```
-issue (GitHub)  →  rama issue/<n>-slug desde dev
-                      ↓
-                 PR → dev  (revisión Jose)
-                      ↓
-                 integración en dev
-                      ↓
-         PR dev → main  (solo Jose)
+trabajo local  →  push a main   (prod)
+               →  push a dev    (integración)
+               →  rama issue/… o work/… (opcional)
 ```
 
 ### Reglas
 
-1. **Nadie hace push directo a `dev` ni a `main`.** Todo entra por PR.
-2. **`main` solo recibe PRs desde `dev`**, y solo Jose los mergea.
-3. **`dev` solo recibe PRs** desde `issue/...` (o `work/...` si hace falta).
-4. Un issue → una rama → un PR (o PRs pequeños del mismo issue).
-5. En el body del PR: `Closes #<n>`.
+1. **`main` y `dev` son pares.** No hay gate `dev → main` ni PR obligatorio.
+2. Push directo a `main` / `dev` está permitido. **Sin force-push ni borrar** esas ramas (protección GitHub).
+3. Ramas `issue/…` o `work/…` son opcionales para trabajo aislado; se pueden mergear o cherry-pick a `main`/`dev` como convenga.
+4. Si abres un issue: en el commit/PR opcional usa `Closes #<n>`.
 
-### Cómo empezar un issue
+### Cómo trabajar
 
 ```bash
 git fetch origin
-git checkout dev
-git pull origin dev
-git checkout -b issue/<n>-slug   # número del issue + slug corto
+git checkout main   # o: git checkout dev
+git pull
 # …trabajar, commit…
+git push origin HEAD
+```
+
+Rama de issue (opcional):
+
+```bash
+git checkout -b issue/<n>-slug
+# …trabajar…
 git push -u origin HEAD
-gh pr create --base dev --title "…" --body "Closes #<n>"
+# merge/cherry-pick a main o dev cuando esté listo
 ```
 
 ### Ramas personales

@@ -12,10 +12,11 @@ import {
   RefreshCw,
   Siren,
   Timer,
+  X,
   type LucideIcon,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   createAlert,
   fetchDashboardReports,
@@ -54,11 +55,26 @@ export function CraDashboard() {
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [selected, setSelected] = useState<DashboardReport | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [focusToken, setFocusToken] = useState(0);
   const [events, setEvents] = useState<Array<{ type: string; createdAt: string; payload?: unknown }>>(
     [],
   );
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const modalTimerRef = useRef<number | null>(null);
+
+  const closeDetail = useCallback(() => setDetailOpen(false), []);
+
+  /** Click en listado (o marcador): centra el mapa y abre el modal */
+  const openReport = useCallback((report: DashboardReport) => {
+    setSelected(report);
+    setFocusToken((n) => n + 1);
+    setMessage(null);
+    document.getElementById('mapa-cra')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (modalTimerRef.current) window.clearTimeout(modalTimerRef.current);
+    modalTimerRef.current = window.setTimeout(() => setDetailOpen(true), 550);
+  }, []);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -66,10 +82,7 @@ export function CraDashboard() {
       const rows = await fetchDashboardReports();
       setReports(rows);
       setLoadError(null);
-      setSelected((prev) => {
-        if (!prev) return rows[0] ?? null;
-        return rows.find((r) => r.id === prev.id) ?? rows[0] ?? null;
-      });
+      setSelected((prev) => (prev ? rows.find((r) => r.id === prev.id) ?? null : null));
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : 'No se pudieron cargar los reportes');
     } finally {
@@ -82,14 +95,34 @@ export function CraDashboard() {
   }, [refresh]);
 
   useEffect(() => {
-    if (!selected) {
+    return () => {
+      if (modalTimerRef.current) window.clearTimeout(modalTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!selected || !detailOpen) {
       setEvents([]);
       return;
     }
     void fetchReportEvents(selected.id)
       .then((data) => setEvents(data as typeof events))
       .catch(() => setEvents([]));
-  }, [selected]);
+  }, [selected, detailOpen]);
+
+  useEffect(() => {
+    if (!detailOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeDetail();
+    };
+    window.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [detailOpen, closeDetail]);
 
   const filtered = useMemo(() => {
     return reports
@@ -197,10 +230,13 @@ export function CraDashboard() {
       ) : null}
 
       <div className="grid items-stretch gap-4 lg:grid-cols-[1.55fr_1fr] lg:gap-5">
-        <section className="flex min-w-0 flex-col">
+        <section id="mapa-cra" className="flex min-w-0 flex-col scroll-mt-4">
           <GuardianesMap
             mode="overview"
             reports={filtered}
+            focusReportId={selected?.id ?? null}
+            focusToken={focusToken}
+            onSelectReport={openReport}
             showCraPolygons
             showInvemarPolygons
             className="flex-1"
@@ -258,12 +294,7 @@ export function CraDashboard() {
                 <button
                   key={report.id}
                   type="button"
-                  onClick={() => {
-                    setSelected(report);
-                    if (window.innerWidth < 1024) {
-                      document.getElementById('detalle-reporte')?.scrollIntoView({ behavior: 'smooth' });
-                    }
-                  }}
+                  onClick={() => openReport(report)}
                   aria-pressed={active}
                   style={{ borderLeftColor: pri.color }}
                   className={`w-full rounded-xl border border-l-4 bg-white p-3 text-left shadow-sm transition hover:shadow-md ${
@@ -316,121 +347,154 @@ export function CraDashboard() {
         </section>
       </div>
 
-      {selected ? (
-        <section
-          id="detalle-reporte"
-          className="grid scroll-mt-4 gap-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:grid-cols-[1.4fr_1fr]"
+      {detailOpen && selected ? (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/45 p-0 sm:items-center sm:p-6"
+          role="presentation"
+          onClick={closeDetail}
         >
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-[family-name:var(--font-mono)] text-xl font-bold text-slate-900">
-                {selected.trackingCode}
-              </h2>
-              <span
-                className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${statusTone(selected.status)}`}
-              >
-                {statusLabel(selected.status)}
-              </span>
-              <span
-                className={`rounded border px-2 py-0.5 text-xs font-bold ${priorityStyle(selected.priorityHint).badge}`}
-              >
-                Prioridad {priorityStyle(selected.priorityHint).label}
-              </span>
-            </div>
-            <p className="mt-2 text-sm text-slate-700">{selected.description}</p>
-            <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm md:grid-cols-3">
-              {(
-                [
-                  ['Canal', selected.channel],
-                  ['Categoría', selected.categoryLabel ?? selected.categoryCode ?? '—'],
-                  ['Observado', new Date(selected.observedAt).toLocaleString('es-CO')],
-                  ['Recibido', new Date(selected.receivedAt).toLocaleString('es-CO')],
-                  [
-                    'Ubicación',
-                    `${selected.location.latitude.toFixed(4)}, ${selected.location.longitude.toFixed(4)}`,
-                  ],
-                  ['Fuente ubicación', selected.location.source],
-                  ['Prioridad C.R.A.', selected.priorityHint ?? 'sin cobertura'],
-                  [
-                    'Zona / UH',
-                    `${selected.zoneHydro ?? '—'}${selected.unitHydro ? ` / ${selected.unitHydro}` : ''}`,
-                  ],
-                  ['Especie (INVEMAR)', selected.dominantSpecies ?? 'sin cobertura manglar'],
-                  [
-                    'Zonif. manejo',
-                    `${selected.managementZone ?? '—'}${selected.locality ? ` · ${selected.locality}` : ''}`,
-                  ],
-                ] as const
-              ).map(([label, value]) => (
-                <div key={label}>
-                  <dt className="text-xs text-slate-500">{label}</dt>
-                  <dd className="font-medium text-slate-900">{value}</dd>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="detalle-reporte-title"
+            className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-t-2xl border border-slate-200 bg-white shadow-2xl sm:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-4">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2
+                    id="detalle-reporte-title"
+                    className="font-[family-name:var(--font-mono)] text-xl font-bold text-slate-900"
+                  >
+                    {selected.trackingCode}
+                  </h2>
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${statusTone(selected.status)}`}
+                  >
+                    {statusLabel(selected.status)}
+                  </span>
+                  <span
+                    className={`rounded border px-2 py-0.5 text-xs font-bold ${priorityStyle(selected.priorityHint).badge}`}
+                  >
+                    Prioridad {priorityStyle(selected.priorityHint).label}
+                  </span>
                 </div>
-              ))}
-            </dl>
-            <div className="mt-4 rounded-lg bg-slate-50 p-3">
-              <h3 className="text-sm font-bold text-slate-900">Evidencias</h3>
-              <p className="text-sm text-slate-600">
-                {selected.evidenceCount} evidencia(s) adjunta(s).
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-4">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900">Historial / verificaciones</h3>
-              <ol className="mt-2 space-y-2 border-l-2 border-mg-100 pl-4 text-xs text-slate-600">
-                {events.map((e, idx) => (
-                  <li key={`${e.type}-${idx}`} className="relative">
-                    <span className="absolute -left-[21px] top-1 h-2 w-2 rounded-full bg-mg-600" />
-                    <span className="font-semibold text-slate-800">{statusLabel(e.type)}</span> ·{' '}
-                    {new Date(e.createdAt).toLocaleString('es-CO')}
-                  </li>
-                ))}
-              </ol>
+                <p className="mt-1 text-xs text-slate-500">
+                  Mapa centrado en{' '}
+                  <span className="font-[family-name:var(--font-mono)]">
+                    {selected.location.latitude.toFixed(4)}, {selected.location.longitude.toFixed(4)}
+                  </span>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeDetail}
+                className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                aria-label="Cerrar detalle"
+              >
+                <X className="h-5 w-5" aria-hidden />
+              </button>
             </div>
 
-            <div className="mt-auto flex flex-wrap gap-2">
-              <Button
-                onClick={() =>
-                  runAction(async () => {
-                    await patchReportStatus(selected.id, 'under_review', 'triage CRA');
-                    return 'Reporte marcado en revisión.';
-                  })
-                }
-              >
-                <Eye className="h-4 w-4" aria-hidden />
-                Marcar en revisión
-              </Button>
-              <Button
-                variant="secondary"
-                className="border-red-600! text-red-700! hover:bg-red-50!"
-                onClick={() =>
-                  runAction(async () => {
-                    await createAlert(
-                      selected.id,
-                      'Alerta preliminar',
-                      'Revisión inicial desde dashboard C.R.A.',
-                    );
-                    return 'Alerta preliminar creada (no es autorización).';
-                  })
-                }
-              >
-                <Siren className="h-4 w-4" aria-hidden />
-                Crear alerta preliminar
-              </Button>
-              <Button variant="secondary" onClick={() => void refresh()}>
-                <RefreshCw className="h-4 w-4" aria-hidden />
-                Refrescar
-              </Button>
+            <div className="grid flex-1 gap-5 overflow-y-auto p-5 lg:grid-cols-[1.4fr_1fr]">
+              <div>
+                <p className="text-sm text-slate-700">{selected.description}</p>
+                <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm md:grid-cols-3">
+                  {(
+                    [
+                      ['Canal', selected.channel],
+                      ['Categoría', selected.categoryLabel ?? selected.categoryCode ?? '—'],
+                      ['Observado', new Date(selected.observedAt).toLocaleString('es-CO')],
+                      ['Recibido', new Date(selected.receivedAt).toLocaleString('es-CO')],
+                      [
+                        'Ubicación',
+                        `${selected.location.latitude.toFixed(4)}, ${selected.location.longitude.toFixed(4)}`,
+                      ],
+                      ['Fuente ubicación', selected.location.source],
+                      ['Prioridad C.R.A.', selected.priorityHint ?? 'sin cobertura'],
+                      [
+                        'Zona / UH',
+                        `${selected.zoneHydro ?? '—'}${selected.unitHydro ? ` / ${selected.unitHydro}` : ''}`,
+                      ],
+                      ['Especie (INVEMAR)', selected.dominantSpecies ?? 'sin cobertura manglar'],
+                      [
+                        'Zonif. manejo',
+                        `${selected.managementZone ?? '—'}${selected.locality ? ` · ${selected.locality}` : ''}`,
+                      ],
+                    ] as const
+                  ).map(([label, value]) => (
+                    <div key={label}>
+                      <dt className="text-xs text-slate-500">{label}</dt>
+                      <dd className="font-medium text-slate-900">{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <div className="mt-4 rounded-lg bg-slate-50 p-3">
+                  <h3 className="text-sm font-bold text-slate-900">Evidencias</h3>
+                  <p className="text-sm text-slate-600">
+                    {selected.evidenceCount} evidencia(s) adjunta(s).
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Historial / verificaciones</h3>
+                  <ol className="mt-2 space-y-2 border-l-2 border-mg-100 pl-4 text-xs text-slate-600">
+                    {events.map((e, idx) => (
+                      <li key={`${e.type}-${idx}`} className="relative">
+                        <span className="absolute -left-[21px] top-1 h-2 w-2 rounded-full bg-mg-600" />
+                        <span className="font-semibold text-slate-800">{statusLabel(e.type)}</span> ·{' '}
+                        {new Date(e.createdAt).toLocaleString('es-CO')}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+
+                <div className="mt-auto flex flex-wrap gap-2">
+                  <Button
+                    onClick={() =>
+                      runAction(async () => {
+                        await patchReportStatus(selected.id, 'under_review', 'triage CRA');
+                        return 'Reporte marcado en revisión.';
+                      })
+                    }
+                  >
+                    <Eye className="h-4 w-4" aria-hidden />
+                    Marcar en revisión
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="border-red-600! text-red-700! hover:bg-red-50!"
+                    onClick={() =>
+                      runAction(async () => {
+                        await createAlert(
+                          selected.id,
+                          'Alerta preliminar',
+                          'Revisión inicial desde dashboard C.R.A.',
+                        );
+                        return 'Alerta preliminar creada (no es autorización).';
+                      })
+                    }
+                  >
+                    <Siren className="h-4 w-4" aria-hidden />
+                    Crear alerta preliminar
+                  </Button>
+                  <Button variant="secondary" onClick={() => void refresh()}>
+                    <RefreshCw className="h-4 w-4" aria-hidden />
+                    Refrescar
+                  </Button>
+                </div>
+                {message ? (
+                  <p className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800" role="status">
+                    {message}
+                  </p>
+                ) : null}
+              </div>
             </div>
-            {message ? (
-              <p className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800" role="status">
-                {message}
-              </p>
-            ) : null}
           </div>
-        </section>
+        </div>
       ) : null}
     </div>
   );

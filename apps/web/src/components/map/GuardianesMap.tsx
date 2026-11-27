@@ -11,6 +11,10 @@ type Props = {
   reports?: DashboardReport[];
   pick?: { longitude: number; latitude: number } | null;
   onPick?: (point: { longitude: number; latitude: number }) => void;
+  /** Selected from the inbox list — centers map + opens popup */
+  focusReportId?: string | null;
+  focusToken?: number;
+  onSelectReport?: (report: DashboardReport) => void;
   showCraPolygons?: boolean;
   showInvemarPolygons?: boolean;
   className?: string;
@@ -76,6 +80,9 @@ export function GuardianesMap({
   reports = [],
   pick,
   onPick,
+  focusReportId = null,
+  focusToken = 0,
+  onSelectReport,
   showCraPolygons: showCraDefault = true,
   showInvemarPolygons: showInvemarDefault = true,
   className = '',
@@ -86,6 +93,11 @@ export function GuardianesMap({
   const craLayerRef = useRef<import('leaflet').LayerGroup | null>(null);
   const invemarLayerRef = useRef<import('leaflet').LayerGroup | null>(null);
   const reportsLayerRef = useRef<import('leaflet').LayerGroup | null>(null);
+  const markersByIdRef = useRef<Map<string, import('leaflet').CircleMarker>>(new Map());
+  const onSelectReportRef = useRef(onSelectReport);
+  const focusReportIdRef = useRef(focusReportId);
+  onSelectReportRef.current = onSelectReport;
+  focusReportIdRef.current = focusReportId;
 
   const [layerCra, setLayerCra] = useState(showCraDefault && mode === 'overview');
   const [layerInvemar, setLayerInvemar] = useState(showInvemarDefault && mode === 'overview');
@@ -282,6 +294,7 @@ export function GuardianesMap({
     void (async () => {
       const L = await import('leaflet');
       group.clearLayers();
+      markersByIdRef.current.clear();
 
       for (const report of reports) {
         const statusColor = STATUS_COLORS[report.status] ?? '#38bdf8';
@@ -315,7 +328,11 @@ export function GuardianesMap({
               : 'Punto reportado por ciudadanía (PWA/WhatsApp).',
           ),
         );
+        marker.on('click', () => {
+          onSelectReportRef.current?.(report);
+        });
         marker.addTo(group);
+        markersByIdRef.current.set(report.id, marker);
       }
 
       if (pick) {
@@ -334,13 +351,12 @@ export function GuardianesMap({
       if (layerReports) group.addTo(map);
       else map.removeLayer(group);
 
-      if (mode === 'overview') {
+      if (mode === 'overview' && !focusReportIdRef.current) {
         try {
           if (reports.length > 0) {
             const latLngs = reports.map(
               (r) => [r.location.latitude, r.location.longitude] as [number, number],
             );
-            // Include the mangrove core so a lone Barranquilla pin doesn't zoom out the coast
             latLngs.push([11.045, -74.86], [11.02, -74.9]);
             map.fitBounds(L.latLngBounds(latLngs), { padding: [36, 36], maxZoom: 13 });
           }
@@ -358,6 +374,22 @@ export function GuardianesMap({
     if (layerReports) group.addTo(map);
     else map.removeLayer(group);
   }, [layerReports, ready]);
+
+  // Inbox list selection → flyTo + popup
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || !focusReportId) return;
+    const report = reports.find((r) => r.id === focusReportId);
+    if (!report) return;
+
+    map.flyTo([report.location.latitude, report.location.longitude], Math.max(map.getZoom(), 14), {
+      duration: 0.8,
+    });
+    const timer = window.setTimeout(() => {
+      markersByIdRef.current.get(focusReportId)?.openPopup();
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [focusReportId, focusToken, ready, reports, reportsKey]);
 
   return (
     <div className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${className}`}>

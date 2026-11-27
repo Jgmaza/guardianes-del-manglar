@@ -1,6 +1,6 @@
 # Deploy — Vercel (`main`)
 
-`dev` = integración. `main` = producción (este workflow).
+`dev` e integración / `main` = producción (mismo nivel de ramas; este workflow despliega **`main`**).
 
 ## Secrets de GitHub (repo → Settings → Secrets)
 
@@ -25,6 +25,6 @@ Node.js en el proyecto Vercel: **22.x**.
 
 ## Flujo
 
-1. PR `issue/…` → `dev` (CI verde)
-2. PR `dev` → `main` (solo Jose)
-3. Push a `main` dispara **Deploy Vercel (main)**
+1. Push (o merge) a **`main`**
+2. Dispara **Deploy Vercel (main)**
+3. `dev` se puede usar en paralelo para integración; no es gate obligatorio hacia `main`

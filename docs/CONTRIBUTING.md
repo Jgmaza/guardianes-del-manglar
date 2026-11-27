@@ -13,7 +13,7 @@ git checkout dev && git pull
 ```
 
 Onboarding corto: [`ONBOARDING.md`](ONBOARDING.md).  
-Ramas: [`BRANCHES.md`](BRANCHES.md) (mismo método que el juego: `main` ← `dev` ← `issue/<n>-slug`).
+Ramas: [`BRANCHES.md`](BRANCHES.md) (`main` y `dev` al mismo nivel; push directo OK).
 
 No commitear la carpeta padre `ManglarHack/docs/` (notas personales / KMZ de trabajo) dentro de este repositorio salvo decisión explícita sobre `data/` (ver DECISIONS X7).
 
@@ -35,8 +35,8 @@ Detalle: [`INSTALL.md`](INSTALL.md). **Nunca** subir secretos reales.
 
 | Rama | Uso |
 |------|-----|
-| `main` | Estable; solo Jose via PR `dev` → `main` |
-| `dev` | Integración; solo via PR desde `issue/...` |
+| `main` | Producción; push directo |
+| `dev` | Integración; mismo nivel que `main` |
 | `issue/<n>-slug` | Trabajo de un issue (sale de `dev`) |
 | `work/<persona>` | Rama personal opcional |
 
@@ -61,20 +61,17 @@ chore: add pnpm workspace skeleton
 
 ---
 
-## 5. Cómo crear Pull Requests `PROPOSED`
+## 5. Pull Requests (opcionales) `PROPOSED`
 
-1. Branch desde `main` actualizado.
-2. Cambios acotados; actualizar docs si cambia comportamiento o decisiones.
-3. PR con:
-   - Resumen (qué / por qué)
-   - Estado de integración tocada (`PENDING`/`IMPLEMENTED`)
-   - Screenshots solo si hay UI
-4. Checklist:
+No son obligatorios: puedes pushear directo a `main` o `dev`. Si usas PR (rama `issue/…` o `work/…`):
+
+1. Cambios acotados; actualizar docs si cambia comportamiento o decisiones.
+2. PR con resumen (qué / por qué) y estado de integración si aplica.
+3. Checklist:
    - [ ] No secretos
    - [ ] No datos C.R.A. inventados
    - [ ] No presentar reporte como alerta automática
    - [ ] Docs alineados (README / DECISIONS / INTEGRATIONS)
-5. Revisión de al menos un compañero cuando el equipo tenga ≥2 activos.
 
 ---
 
