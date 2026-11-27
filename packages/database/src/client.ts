@@ -44,3 +44,33 @@ export function createSupabaseServiceClient(
     },
   });
 }
+
+/**
+ * Server client for report persistence.
+ * Uses service role when available; otherwise anon (only safe while tables have no RLS).
+ */
+export function createReportsPersistenceClient(
+  env: NodeJS.ProcessEnv = process.env,
+): SupabaseClient {
+  const config = getSupabasePublicConfig(env);
+  if (!config) {
+    throw new Error(
+      'Reports persistence requires NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    );
+  }
+
+  const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const key = serviceKey || config.anonKey;
+  if (!serviceKey) {
+    console.warn(
+      '[reports] SUPABASE_SERVICE_ROLE_KEY missing — using anon key (ok only without RLS)',
+    );
+  }
+
+  return createClient(config.url, key, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+}
