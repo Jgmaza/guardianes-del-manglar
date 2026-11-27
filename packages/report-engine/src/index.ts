@@ -1,6 +1,7 @@
 export {
   assertNoPiiFields,
   stripReporterFromDashboardReport,
+  toDashboardListItem,
   toPublicTrackingView,
   toSanitizedExport,
 } from './anonymity';

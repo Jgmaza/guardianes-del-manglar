@@ -141,7 +141,34 @@ export type ReportEventType =
   | 'verification_recorded'
   | 'status_changed'
   | 'alert_created'
-  | 'tracking_viewed';
+  | 'tracking_viewed'
+  | 'geo_matched';
+
+/** Result of point-in-polygon join against CRA + INVEMAR layers (no invented attrs). */
+export type ReportGeoMatch = {
+  matchedAt: string;
+  longitude: number;
+  latitude: number;
+  cra: {
+    hasCoverage: boolean;
+    matchCount: number;
+    priority: string | null;
+    zoneHydro: string | null;
+    subzoneHydro: string | null;
+    unitHydro: string | null;
+    action: string | null;
+    scenario: string | null;
+  };
+  invemar: {
+    hasCoverage: boolean;
+    matchCount: number;
+    dominantSpecies: string | null;
+    composition: string | null;
+    structure: string | null;
+    managementZone: string | null;
+    locality: string | null;
+  };
+};
 
 export type ReportEvent = {
   id: string;
@@ -192,4 +219,22 @@ export type SanitizedReportExport = {
   observedAt: string;
   receivedAt: string;
   evidenceCount: number;
+};
+
+/**
+ * CRA dashboard list row — sanitized, no secrets/PII.
+ * `priorityHint` is only set when a geo join against CRA layers is available.
+ */
+export type DashboardReportListItem = SanitizedReportExport & {
+  categoryLabel: string | null;
+  hasPreliminaryAlert: boolean;
+  updatedAt: string;
+  /** Official CRA priority only when computed by geo processing — never invented */
+  priorityHint: string | null;
+  zoneHydro: string | null;
+  unitHydro: string | null;
+  dominantSpecies: string | null;
+  managementZone: string | null;
+  locality: string | null;
+  geoMatch: ReportGeoMatch | null;
 };

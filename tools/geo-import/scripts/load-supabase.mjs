@@ -17,15 +17,23 @@ import pg from "pg";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "../../..");
-const PROCESSED = path.join(ROOT, "data/processed");
 const BATCH = 25;
 
 function parseArgs(argv) {
-  const out = { limit: 0, batchSize: BATCH, envFile: path.join(ROOT, ".supabase-project.env") };
+  const out = {
+    limit: 0,
+    batchSize: BATCH,
+    envFile: path.join(ROOT, ".supabase-project.env"),
+    processedDir: path.join(ROOT, "data/processed"),
+  };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--limit") out.limit = Number(argv[++i] || 0);
     else if (argv[i] === "--batch-size") out.batchSize = Number(argv[++i] || BATCH);
     else if (argv[i] === "--env-file") out.envFile = argv[++i];
+    else if (argv[i] === "--processed-dir") {
+      const raw = argv[++i];
+      out.processedDir = path.isAbsolute(raw) ? raw : path.join(ROOT, raw);
+    }
   }
   return out;
 }
@@ -164,11 +172,13 @@ async function flush(client, layerId, batch) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
+  const PROCESSED = args.processedDir;
   const fileEnv = loadEnvFile(args.envFile);
   const dsn = databaseUrl(fileEnv);
   const manifest = JSON.parse(await readFile(path.join(PROCESSED, "layer_manifest.json"), "utf8"));
 
   console.log(`Layer: ${manifest.code}`);
+  console.log(`Processed dir: ${PROCESSED}`);
   const hostHint = (dsn.match(/@([^:/]+)/) || [])[1] || "supabase";
   console.log(`Connecting via ${hostHint} …`);
 
@@ -211,6 +221,7 @@ async function main() {
           attribute_keys_observed: manifest.attribute_keys_observed ?? [],
           notes: manifest.notes ?? [],
           created_at_source: manifest.created_at,
+          source_url: manifest.source_url ?? null,
         }),
       ],
     );
@@ -283,9 +294,12 @@ async function main() {
       [count, layerId],
     );
 
+    // CRA sample point (Magdalena) + Mallorquín approx for INVEMAR zonificación
+    const smokeLon = manifest.code.startsWith("invemar") ? -74.85 : -74.91043248871381;
+    const smokeLat = manifest.code.startsWith("invemar") ? 11.04 : 10.259016321844786;
     const hit = await client.query(
-      `SELECT count(*)::int AS n FROM geo_features_at_point($1::uuid, -74.91043248871381, 10.259016321844786)`,
-      [layerId],
+      `SELECT count(*)::int AS n FROM geo_features_at_point($1::uuid, $2, $3)`,
+      [layerId, smokeLon, smokeLat],
     );
     const miss = await client.query(
       `SELECT count(*)::int AS n FROM geo_features_at_point($1::uuid, -70, 5)`,
@@ -296,7 +310,9 @@ async function main() {
     console.log(
       `Done in ${elapsed.toFixed(1)}s — stream_ok≈${inserted}, db_count=${count}, skipped=${skipped}`,
     );
-    console.log(`PIP smoke: known point hits=${hit.rows[0].n}, outside hits=${miss.rows[0].n}`);
+    console.log(
+      `PIP smoke (${smokeLon}, ${smokeLat}): hits=${hit.rows[0].n}, outside hits=${miss.rows[0].n}`,
+    );
   } finally {
     await client.end();
   }

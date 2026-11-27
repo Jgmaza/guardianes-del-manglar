@@ -1,9 +1,11 @@
 import type {
   Alert,
+  DashboardReportListItem,
   PublicReportTrackingView,
   Report,
   ReportCategory,
   ReportEvent,
+  ReportGeoMatch,
   ReportStatus,
   SanitizedReportExport,
 } from '@guardianes/contracts';
@@ -14,6 +16,7 @@ import {
   getReportEvidences,
 } from '@guardianes/report-engine';
 import type { AttachEvidenceInput } from '@guardianes/evidence-engine';
+import { matchReportLocation } from './geo-match';
 
 /**
  * Domain service + optional Supabase write-through / hydrate-on-read.
@@ -55,7 +58,42 @@ export class PersistingReportService {
       const events = this.inner.listEvents(result.report.id);
       await this.repo.persistCreate(result, events);
     }
+
+    // Best-effort CRA + INVEMAR join (PostGIS). Never blocks create on geo failure.
+    try {
+      const match = await matchReportLocation({
+        longitude: result.report.location.longitude,
+        latitude: result.report.location.latitude,
+      });
+      if (match) {
+        await this.applyGeoMatch(result.report.id, match);
+        result.report = this.inner.getStore().reports.get(result.report.id) ?? result.report;
+      }
+    } catch (err) {
+      console.error('Geo match after create failed', err);
+    }
+
     return result;
+  }
+
+  async applyGeoMatch(reportId: string, match: ReportGeoMatch): Promise<Report> {
+    await this.ensureReport(reportId);
+    const before = new Set(this.inner.listEvents(reportId).map((e) => e.id));
+    const report = this.inner.applyGeoMatch(reportId, match);
+    if (this.repo) {
+      const events = this.inner.listEvents(reportId).filter((e) => !before.has(e.id));
+      await this.repo.persistReportUpdate(report, events);
+    }
+    return report;
+  }
+
+  listReportsForDashboard(): DashboardReportListItem[] {
+    return this.inner.listReportsForDashboard();
+  }
+
+  async listReportsForDashboardHydrated(): Promise<DashboardReportListItem[]> {
+    // Memory + already-hydrated rows. Full table scan from Supabase is a later step.
+    return this.inner.listReportsForDashboard();
   }
 
   async assignCategory(reportId: string, categoryCode: string): Promise<Report> {

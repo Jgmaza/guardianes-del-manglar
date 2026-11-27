@@ -456,6 +456,22 @@ export class SupabaseReportsRepository {
       if (!store.events.some((e) => e.id === event.id)) {
         store.events.push(event);
       }
+      if (event.type === 'geo_matched' && event.payload && typeof event.payload === 'object') {
+        const payload = event.payload as {
+          cra?: import('@guardianes/contracts').ReportGeoMatch['cra'];
+          invemar?: import('@guardianes/contracts').ReportGeoMatch['invemar'];
+          matchedAt?: string;
+        };
+        if (payload.cra && payload.invemar) {
+          store.geoMatches.set(report.id, {
+            matchedAt: payload.matchedAt ?? event.createdAt,
+            longitude: report.location.longitude,
+            latitude: report.location.latitude,
+            cra: payload.cra,
+            invemar: payload.invemar,
+          });
+        }
+      }
     }
 
     const { data: evidences } = await this.client

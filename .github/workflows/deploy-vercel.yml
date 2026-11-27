@@ -31,6 +31,33 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      - name: Sync production env to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_ENABLE_SUPABASE: ${{ secrets.NEXT_PUBLIC_ENABLE_SUPABASE }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_APP_NAME: ${{ secrets.NEXT_PUBLIC_APP_NAME }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+        run: |
+          set -euo pipefail
+          upsert() {
+            local key="$1"
+            local val="$2"
+            [ -n "$val" ] || return 0
+            npx vercel@latest env rm "$key" production --yes --token="$VERCEL_TOKEN" 2>/dev/null || true
+            printf '%s' "$val" | npx vercel@latest env add "$key" production --token="$VERCEL_TOKEN"
+          }
+          upsert NEXT_PUBLIC_SUPABASE_URL "$NEXT_PUBLIC_SUPABASE_URL"
+          upsert NEXT_PUBLIC_SUPABASE_ANON_KEY "$NEXT_PUBLIC_SUPABASE_ANON_KEY"
+          upsert NEXT_PUBLIC_ENABLE_SUPABASE "${NEXT_PUBLIC_ENABLE_SUPABASE:-true}"
+          upsert SUPABASE_SERVICE_ROLE_KEY "$SUPABASE_SERVICE_ROLE_KEY"
+          upsert NEXT_PUBLIC_APP_NAME "${NEXT_PUBLIC_APP_NAME:-Guardianes del Manglar}"
+          upsert NEXT_PUBLIC_APP_URL "${NEXT_PUBLIC_APP_URL:-https://guardianes-del-manglar.vercel.app}"
+
       - name: Pull Vercel env
         run: npx vercel@latest pull --yes --environment=production --token="${{ secrets.VERCEL_TOKEN }}"
         env:

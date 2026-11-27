@@ -57,3 +57,17 @@ export function isReportsPersistenceConfigured(
   }
   return isSupabaseConfigured(env);
 }
+
+/**
+ * Geo RPC (point-in-polygon) can run even when report persistence is memory-only,
+ * as long as service role credentials are present.
+ */
+export function isSupabaseGeoConfigured(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  if (env.NEXT_PUBLIC_ENABLE_SUPABASE === 'false') {
+    return false;
+  }
+  const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim() ?? '';
+  return isSupabaseConfigured(env) && serviceKey.length > 0;
+}

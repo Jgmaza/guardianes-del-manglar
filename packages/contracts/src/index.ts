@@ -7,6 +7,8 @@ import type { GeoPoint, ReportChannel, ReportStatus } from './reports';
 export type {
   Alert,
   AlertStatus,
+  DashboardReportListItem,
+  ReportGeoMatch,
   Evidence,
   EvidenceExif,
   EvidenceMediaKind,

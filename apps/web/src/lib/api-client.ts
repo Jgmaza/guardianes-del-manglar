@@ -1,3 +1,65 @@
+export type DashboardReport = {
+  id: string;
+  trackingCode: string;
+  channel: string;
+  status: string;
+  categoryCode: string | null;
+  categoryLabel: string | null;
+  description: string | null;
+  location: {
+    longitude: number;
+    latitude: number;
+    accuracyMeters?: number;
+    source: string;
+  };
+  priorityHint: string | null;
+  zoneHydro: string | null;
+  unitHydro: string | null;
+  dominantSpecies: string | null;
+  managementZone: string | null;
+  locality: string | null;
+  observedAt: string;
+  receivedAt: string;
+  updatedAt?: string;
+  evidenceCount: number;
+  hasPreliminaryAlert: boolean;
+  geoMatch?: unknown;
+};
+
+/** Alias kept for map/fixture callers */
+export type FixtureReport = DashboardReport;
+
+function withGeoDefaults(
+  row: Partial<DashboardReport> &
+    Pick<
+      DashboardReport,
+      'id' | 'trackingCode' | 'channel' | 'status' | 'location' | 'observedAt' | 'receivedAt' | 'evidenceCount' | 'hasPreliminaryAlert'
+    >,
+): DashboardReport {
+  return {
+    categoryCode: row.categoryCode ?? null,
+    categoryLabel: row.categoryLabel ?? null,
+    description: row.description ?? null,
+    priorityHint: row.priorityHint ?? null,
+    zoneHydro: row.zoneHydro ?? null,
+    unitHydro: row.unitHydro ?? null,
+    dominantSpecies: row.dominantSpecies ?? null,
+    managementZone: row.managementZone ?? null,
+    locality: row.locality ?? null,
+    updatedAt: row.updatedAt,
+    geoMatch: row.geoMatch,
+    id: row.id,
+    trackingCode: row.trackingCode,
+    channel: row.channel,
+    status: row.status,
+    location: row.location,
+    observedAt: row.observedAt,
+    receivedAt: row.receivedAt,
+    evidenceCount: row.evidenceCount,
+    hasPreliminaryAlert: row.hasPreliminaryAlert,
+  };
+}
+
 export async function fetchCategories() {
   const res = await fetch('/api/v1/categories');
   const json = (await res.json()) as {
@@ -10,6 +72,23 @@ export async function fetchCategories() {
     }>;
   };
   return json.data;
+}
+
+export async function fetchDashboardReports(): Promise<{
+  reports: DashboardReport[];
+  source: 'api' | 'fixture';
+}> {
+  const res = await fetch('/api/v1/reports');
+  if (!res.ok) {
+    const fixtures = await loadFixtureReports();
+    return { reports: fixtures, source: 'fixture' };
+  }
+  const json = (await res.json()) as { data: DashboardReport[] };
+  if (json.data.length > 0) {
+    return { reports: json.data.map((r) => withGeoDefaults(r)), source: 'api' };
+  }
+  const fixtures = await loadFixtureReports();
+  return { reports: fixtures, source: 'fixture' };
 }
 
 export async function trackReport(trackingCode: string, trackingSecret: string) {
@@ -52,29 +131,8 @@ export async function fetchReportEvents(id: string) {
   return json.data;
 }
 
-export type FixtureReport = {
-  id: string;
-  trackingCode: string;
-  channel: string;
-  status: string;
-  categoryCode: string;
-  categoryLabel: string;
-  description: string;
-  location: {
-    longitude: number;
-    latitude: number;
-    accuracyMeters?: number;
-    source: string;
-  };
-  priorityHint?: string;
-  observedAt: string;
-  receivedAt: string;
-  evidenceCount: number;
-  hasPreliminaryAlert: boolean;
-};
-
-export async function loadFixtureReports(): Promise<FixtureReport[]> {
+export async function loadFixtureReports(): Promise<DashboardReport[]> {
   const res = await fetch('/fixtures/demo-reports.json');
-  const json = (await res.json()) as { fixture: boolean; reports: FixtureReport[] };
-  return json.reports.map((r) => ({ ...r }));
+  const json = (await res.json()) as { fixture: boolean; reports: DashboardReport[] };
+  return json.reports.map((r) => withGeoDefaults(r));
 }
