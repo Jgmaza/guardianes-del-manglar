@@ -13,6 +13,7 @@ out
 .env
 .env.local
 .env.*.local
+.supabase-project.env
 !.env.example
 
 # whatsapp bot session (Baileys)

@@ -19,6 +19,7 @@
     "geo:normalize": "pnpm --filter @guardianes/geo-import normalize",
     "geo:query-point": "pnpm --filter @guardianes/geo-import start:query-point",
     "geo:query-bbox": "pnpm --filter @guardianes/geo-import start:query-bbox",
+    "geo:load-supabase": "pnpm --filter @guardianes/geo-import load-supabase",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "clean": "turbo run clean && rm -rf node_modules"
