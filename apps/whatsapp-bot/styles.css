@@ -73,11 +73,11 @@ body {
 }
 
 .lede {
-  margin: 14px 0 0;
-  max-width: 42ch;
+  margin: 12px 0 0;
+  max-width: 28ch;
   font-size: 1.05rem;
-  line-height: 1.5;
-  color: rgba(247, 243, 235, 0.82);
+  line-height: 1.35;
+  color: rgba(247, 243, 235, 0.78);
 }
 
 .shell {
@@ -140,11 +140,12 @@ body {
 }
 
 .bubble {
-  max-width: min(85%, 420px);
-  padding: 12px 14px;
+  max-width: min(85%, 380px);
+  padding: 10px 14px;
   border-radius: 16px;
-  line-height: 1.4;
-  font-size: 0.98rem;
+  line-height: 1.35;
+  font-size: 0.95rem;
+  font-weight: 600;
   animation: pop 0.28s ease both;
 }
 
@@ -195,14 +196,15 @@ body {
 }
 
 .choice-btn {
-  min-height: 52px;
-  padding: 12px 14px;
+  min-height: 56px;
+  padding: 14px 16px;
   border-radius: 14px;
   text-align: left;
   background: #fff;
-  border: 1px solid rgba(20, 35, 31, 0.12);
+  border: 1.5px solid rgba(20, 35, 31, 0.12);
   color: var(--ink);
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 1rem;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -223,6 +225,18 @@ body {
 .choice-btn:hover {
   border-color: var(--accent);
   background: #f3faf7;
+}
+
+.choice-rojo {
+  border-left: 4px solid var(--rojo);
+}
+
+.choice-amarillo {
+  border-left: 4px solid var(--amarillo);
+}
+
+.choice-verde {
+  border-left: 4px solid var(--verde);
 }
 
 .ghost-btn {
@@ -266,36 +280,39 @@ body {
   align-self: stretch;
   background: #fff;
   border: 1px solid rgba(20, 35, 31, 0.1);
-  border-left: 5px solid var(--accent);
+  border-left: 6px solid var(--accent);
   border-radius: 16px;
-  padding: 16px;
+  padding: 18px;
   animation: pop 0.35s ease both;
 }
 
 .result-card.nivel-rojo {
   border-left-color: var(--rojo);
+  background: linear-gradient(135deg, #fff8f7 0%, #fff 55%);
 }
 
 .result-card.nivel-amarillo {
   border-left-color: var(--amarillo);
+  background: linear-gradient(135deg, #fffaf3 0%, #fff 55%);
 }
 
 .result-card.nivel-verde {
   border-left-color: var(--verde);
+  background: linear-gradient(135deg, #f4faf7 0%, #fff 55%);
 }
 
 .result-top {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .result-kicker {
   margin: 0;
-  font-size: 0.78rem;
-  letter-spacing: 0.04em;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--ink-soft);
   font-weight: 700;
@@ -303,56 +320,77 @@ body {
 
 .prio-pill {
   flex-shrink: 0;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  padding: 4px 8px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 5px 10px;
   border-radius: 999px;
   background: rgba(20, 35, 31, 0.08);
   color: var(--ink);
 }
 
+.nivel-rojo .prio-pill {
+  background: rgba(180, 35, 24, 0.12);
+  color: var(--rojo);
+}
+
+.nivel-amarillo .prio-pill {
+  background: rgba(181, 71, 8, 0.12);
+  color: var(--amarillo);
+}
+
+.nivel-verde .prio-pill {
+  background: rgba(6, 118, 71, 0.12);
+  color: var(--verde);
+}
+
 .result-tone {
-  margin: 0 0 12px;
+  margin: 0 0 10px;
   color: var(--ink-soft);
-  line-height: 1.45;
+  font-size: 0.92rem;
+  line-height: 1.3;
 }
 
 .result-card h2 {
-  margin: 0 0 12px;
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  line-height: 1.25;
-}
-
-.result-frame {
-  margin: 10px 0 0;
-  font-size: 0.8rem;
-  color: var(--ink-soft);
-  line-height: 1.4;
-}
-
-.result-block {
   margin: 0 0 10px;
-  line-height: 1.45;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  line-height: 1.2;
 }
 
-.result-block span {
+.result-contact {
   display: block;
-  font-size: 0.78rem;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(20, 35, 31, 0.05);
+  color: var(--ink);
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--ink-soft);
-  margin-bottom: 2px;
+  font-size: 1.02rem;
+  line-height: 1.35;
+  text-decoration: none;
+  border: 1px solid rgba(20, 35, 31, 0.08);
+}
+
+.result-contact:hover {
+  border-color: var(--accent);
+  background: #f3faf7;
+}
+
+.result-action {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.4;
+  font-weight: 600;
 }
 
 .result-note {
   margin: 12px 0 0;
   padding-top: 12px;
   border-top: 1px solid rgba(20, 35, 31, 0.08);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: var(--ink-soft);
+  font-weight: 600;
 }
 
 .fallback {

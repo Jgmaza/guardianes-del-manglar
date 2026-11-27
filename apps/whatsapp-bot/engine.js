@@ -124,53 +124,32 @@ export function buildResult(session) {
 
 export function formatResultText(result) {
   const lines = [
-    `*${result.titulo}* (${result.prioridad})`,
-    result.tono,
+    `*${result.titulo}* · ${result.prioridad}`,
     "",
-    `*Entidad:* ${result.decision.entidad}`,
-    `*Contacto:* ${result.decision.contacto}`,
-    `*Qué hacer:* ${result.decision.accion}`,
+    `*Llama / escribe a:* ${result.decision.entidad}`,
+    result.decision.contacto,
     "",
-    `*Evidencia útil:* ${result.evidencia}`,
-    `*Privacidad:* ${result.privacidadLabel}`,
+    `*Haz esto:* ${result.decision.accion}`,
   ];
 
-  if (result.anonimo) {
-    lines.push(
-      "_Modo anónimo: no pedimos tu nombre. En WhatsApp el canal puede ver el número; en la web puedes reportar sin identificarte._",
-    );
-  } else {
-    lines.push(
-      "_Modo con datos: cuando radiques, deja nombre y teléfono solo si quieres seguimiento._",
-    );
-  }
-
   if (result.meta.prioridad === "P0") {
-    lines.push("", `⚠️ ${result.fallback}`);
-  } else {
     lines.push("", result.fallback);
   }
 
-  lines.push("", "_Escribe menu para otro reporte._");
+  lines.push("", "_menu_ = otro");
   return lines.join("\n");
 }
 
 function askPeligroText() {
   const paso = MENSAJES.paso_peligro;
-  return [
-    "Hola, soy *Manglar Alerta*.",
-    "Te oriento a quién reportar un daño ambiental (triage tipo alerta institucional).",
-    "",
-    paso.texto,
-    formatOptions(paso.opciones),
-    "",
-    "_Responde con el número. Escribe *menu* para reiniciar. Si escribes *peligro*, subimos a alerta roja._",
-  ].join("\n");
+  return ["*Manglar Alerta* — ¿hay peligro ahora?", formatOptions(paso.opciones)].join(
+    "\n",
+  );
 }
 
 function promptPaso(pasoKey, preface = "") {
   const paso = MENSAJES[pasoKey];
-  const head = preface ? `${preface}\n\n` : "";
+  const head = preface ? `${preface}\n` : "";
   return `${head}${paso.texto}\n${formatOptions(paso.opciones)}`;
 }
 
@@ -201,10 +180,7 @@ export function handleIncoming(session, rawText) {
       return {
         session: next,
         reply: [
-          "Entendido: lo trato como *alerta roja*.",
-          "Si puedes, aléjate y prepárate a llamar al 123 o 119.",
-          "",
-          MENSAJES.paso_tipo.texto,
+          "*Alerta roja.* ¿Qué ves?",
           formatOptions(MENSAJES.paso_tipo.opciones),
         ].join("\n"),
       };
@@ -232,15 +208,12 @@ export function handleIncoming(session, rawText) {
           next.step = STEPS.ZONA;
           return {
             session: next,
-            reply: promptPaso(
-              "paso_zona",
-              "Subí el caso a *alerta roja*. ¿Dónde ocurre?",
-            ),
+            reply: promptPaso("paso_zona", "*Alerta roja.*"),
           };
         }
         return {
           session: next,
-          reply: promptPaso(pasoKey, "Subí el caso a *alerta roja*."),
+          reply: promptPaso(pasoKey, "*Alerta roja.*"),
         };
       }
     }
@@ -266,11 +239,8 @@ export function handleIncoming(session, rawText) {
       next.nivel = "ROJO";
     }
     next.step = STEPS.TIPO;
-    const preface =
-      op.id === "SI"
-        ? "Ok: *peligro ahora*. Prioridad máxima."
-        : `Ok: *${op.label}*`;
-    return { session: next, reply: promptPaso("paso_tipo", preface) };
+    const preface = op.id === "SI" ? "*Peligro ahora* · P0" : null;
+    return { session: next, reply: promptPaso("paso_tipo", preface || "") };
   }
 
   if (next.step === STEPS.TIPO) {
@@ -294,17 +264,14 @@ export function handleIncoming(session, rawText) {
       next.step = STEPS.ZONA;
       return {
         session: next,
-        reply: promptPaso(
-          "paso_zona",
-          `Ok: *${op.label}*\nAlerta *roja* (no bajamos la urgencia). ¿Dónde ocurre?`,
-        ),
+        reply: promptPaso("paso_zona", "*Alerta roja.*"),
       };
     }
 
     next.step = STEPS.NIVEL;
     return {
       session: next,
-      reply: promptPaso("paso_nivel", `Ok: *${op.label}*`),
+      reply: promptPaso("paso_nivel"),
     };
   }
 
@@ -320,9 +287,7 @@ export function handleIncoming(session, rawText) {
     next.nivel = next.forcedRojo ? "ROJO" : raiseNivel(next.nivel, op.id);
     next.step = STEPS.ZONA;
     const note =
-      next.forcedRojo && op.id !== "ROJO"
-        ? "Mantengo *alerta roja* por seguridad (las reglas solo suben la urgencia)."
-        : `Ok: *${op.label}*`;
+      next.forcedRojo && op.id !== "ROJO" ? "*Sigue en alerta roja.*" : "";
     return { session: next, reply: promptPaso("paso_zona", note) };
   }
 
@@ -338,7 +303,7 @@ export function handleIncoming(session, rawText) {
     next.step = STEPS.PRIVACIDAD;
     return {
       session: next,
-      reply: promptPaso("paso_privacidad", `Ok: *${op.label}*`),
+      reply: promptPaso("paso_privacidad"),
     };
   }
 
@@ -355,7 +320,7 @@ export function handleIncoming(session, rawText) {
     const result = buildResult(next);
     return {
       session: next,
-      reply: `Ok: *${op.label}*\n\n${formatResultText(result)}`,
+      reply: formatResultText(result),
     };
   }
 
