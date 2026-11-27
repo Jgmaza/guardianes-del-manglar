@@ -11,7 +11,8 @@ export const runtime = 'nodejs';
 export async function POST(request: Request) {
   try {
     const body: unknown = await request.json();
-    const result = getReportService().createReport(body);
+    const service = getReportService();
+    const result = await service.createReport(body);
     return NextResponse.json(
       {
         data: {
@@ -31,6 +32,7 @@ export async function POST(request: Request) {
           receivedAt: result.report.receivedAt,
         },
         meta: {
+          persistence: service.persistenceEnabled ? 'supabase' : 'memory',
           warning:
             'Store trackingSecret securely. It is not returned again and is never shown on CRA dashboards.',
         },

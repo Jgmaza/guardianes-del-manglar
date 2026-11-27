@@ -5,6 +5,7 @@ export {
 export {
   getSupabasePublicConfig,
   isSupabaseConfigured,
+  isSupabaseServiceConfigured,
   type SupabasePublicConfig,
 } from './env';
 export {
@@ -15,3 +16,12 @@ export {
   readGeographicMigrationSql,
   readReportsMigrationSql,
 } from './migrations';
+export {
+  SupabaseReportsRepository,
+  categoryFromRow,
+  categoryToRow,
+  eventFromRow,
+  eventToRow,
+  reportFromRow,
+  reportToRow,
+} from './reports-repository';

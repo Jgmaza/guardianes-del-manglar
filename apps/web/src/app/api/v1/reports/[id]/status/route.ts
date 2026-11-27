@@ -14,9 +14,9 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (!body.toStatus) {
       return NextResponse.json({ error: 'toStatus is required' }, { status: 400 });
     }
-    const report = getReportService().transitionStatus(id, body.toStatus, body.reason);
+    const report = await getReportService().transitionStatus(id, body.toStatus, body.reason);
     return NextResponse.json({
-      data: getReportService().dashboardView(report.id),
+      data: await getReportService().dashboardView(report.id),
     });
   } catch (error) {
     return NextResponse.json(

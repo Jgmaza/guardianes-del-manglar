@@ -1,7 +1,7 @@
 # DOMAIN_MODEL — Guardianes del Manglar
 
 **Estado del documento:** `IMPLEMENTED` (modelo + motores + API foundation)  
-**Persistencia live Supabase:** migración SQL `IMPLEMENTED` · apply remoto `PENDING`
+**Persistencia live Supabase:** migración SQL `IMPLEMENTED` · repository write-through `IMPLEMENTED` (requiere service role + migraciones aplicadas)
 
 ---
 
@@ -88,5 +88,6 @@ Cuando la autoridad entregue el listado, se registran con `source=cra_official`.
 | Evidencias | `packages/evidence-engine` | `IMPLEMENTED` |
 | Reportes | `packages/report-engine` | `IMPLEMENTED` |
 | SQL | `packages/database/.../002_reports.sql` | `IMPLEMENTED` |
-| HTTP | `apps/web/src/app/api/v1/*` | `IMPLEMENTED` (memoria) |
+| HTTP | `apps/web/src/app/api/v1/*` | `IMPLEMENTED` (memoria o Supabase) |
+| Persistencia | `packages/database` + `PersistingReportService` | `IMPLEMENTED` |
 | Docs API | `docs/REPORTS_API.md` | `IMPLEMENTED` |

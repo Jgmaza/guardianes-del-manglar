@@ -7,9 +7,9 @@ Bot de orientación ciudadana: peligro → tipo → alerta → zona → privacid
 
 ## Objetivo del monorepo
 
-Reutilizar este bot para crear **el mismo reporte canónico** que la PWA vía  
-`POST /api/v1/reports` (ver `docs/REPORTS_API.md`). El triage y la ruta de entidades  
-ya están listos; el adapter a la API de reportes es el siguiente paso.
+Al cerrar el triage el bot hace `POST /api/v1/reports` (`REPORTS_API_URL`).  
+La API persiste en **Supabase** si el web tiene service role; si no, memoria.  
+El bot **no** habla con la DB directo (ver `docs/bot/reports-mapping.md`).
 
 ## Arranque rápido
 
@@ -20,8 +20,11 @@ cp .env.example .env
 # completa TWILIO_* en .env
 pnpm bot       # webhook Twilio en :3001
 pnpm tunnel    # URL pública para el sandbox
-pnpm web       # demo HTML en :3000
+pnpm web       # demo HTML en :3002
 ```
+
+Para guardar en DB: levanta `pnpm --filter @guardianes/web dev` con Supabase
+configurado (`apps/web/.env.local`) y migraciones `001`+`002` aplicadas.
 
 ### Twilio (recomendado)
 
