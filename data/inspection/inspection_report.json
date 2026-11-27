@@ -1,0 +1,1683 @@
+{
+  "source_kml": "/Users/jgmaza/Documents/Proyectos/Propios/ManglarHack/apps/data/raw/kmz_extract/doc.kml",
+  "kml_bytes": 96300428,
+  "kml_sha256": "5a0523ac51cb0ede58943f0621e2e3b13dd15b04829989fd8dd132dd69ba10d3",
+  "namespaces_declared": [
+    "http://www.google.com/kml/ext/2.2",
+    "http://www.opengis.net/kml/2.2",
+    "http://www.w3.org/1999/XSL/Format",
+    "http://www.w3.org/2001/XMLSchema-instance",
+    "urn:schemas-microsoft-com:xslt"
+  ],
+  "document": {
+    "id": "Prioridades_de_conservación",
+    "name": "Prioridades de conservación"
+  },
+  "folders": [
+    {
+      "id": "FeatureLayer0",
+      "name": "Prioridades de conservación",
+      "description": "Contiene la priorización de unidades hidrograficas inmersas dentro de las 4 subzonas hidrograficas presentes en departamento del Atlantico.  Igualmente presenta la información sobre los escenarios de conservación y las acciones de compensación para las areas priorizadas dentro del departamento."
+    }
+  ],
+  "tag_counts": {
+    "Document": 1,
+    "Folder": 1,
+    "Placemark": 14732,
+    "Polygon": 17182,
+    "MultiGeometry": 14732,
+    "Point": 0,
+    "LineString": 0,
+    "LinearRing": 17395,
+    "outerBoundaryIs": 17182,
+    "innerBoundaryIs": 213,
+    "coordinates": 17395,
+    "ExtendedData": 0,
+    "SchemaData": 0,
+    "SimpleData": 0,
+    "Data": 0,
+    "Schema": 0,
+    "SimpleField": 0,
+    "styleUrl": 14732,
+    "Style": 2,
+    "description": 14733,
+    "name": 14734,
+    "Snippet": 14734
+  },
+  "geometry": {
+    "placemarks": 14732,
+    "geometry_type_counts": {
+      "MultiGeometry>Polygon": 14732
+    },
+    "total_Polygon_tags": 17182,
+    "total_MultiGeometry_tags": 14732,
+    "total_LinearRing_tags": 17395,
+    "inner_boundary_holes": 213,
+    "vertex_count": 1181976,
+    "ring_count_distribution_top": [
+      [
+        1,
+        13437
+      ],
+      [
+        2,
+        801
+      ],
+      [
+        3,
+        260
+      ],
+      [
+        4,
+        106
+      ],
+      [
+        5,
+        43
+      ],
+      [
+        6,
+        25
+      ],
+      [
+        7,
+        15
+      ],
+      [
+        9,
+        14
+      ],
+      [
+        8,
+        9
+      ],
+      [
+        10,
+        6
+      ]
+    ],
+    "bbox_wgs84": {
+      "min_longitude": -75.24952656480643,
+      "min_latitude": 10.2587666904547,
+      "max_longitude": -74.7208824345115,
+      "max_latitude": 11.06300207947404
+    }
+  },
+  "extended_data": {
+    "ExtendedData_count": 0,
+    "SchemaData_count": 0,
+    "SimpleData_count": 0,
+    "Data_count": 0,
+    "Schema_count": 0,
+    "attribute_storage": "html_description_tables"
+  },
+  "placemark_properties": {
+    "with_id": 14732,
+    "missing_id": 0,
+    "unique_ids": 14732,
+    "duplicate_ids": 0,
+    "missing_name": 0,
+    "name_value_counts_top": [
+      [
+        "Bajo Magdalena",
+        7561
+      ],
+      [
+        "Caribe - Litoral",
+        7079
+      ],
+      [
+        "Rio Magdalena",
+        92
+      ]
+    ],
+    "styleUrl_counts": [
+      [
+        "#PolyStyle011",
+        9295
+      ],
+      [
+        "#PolyStyle00",
+        5437
+      ]
+    ]
+  },
+  "attribute_fields": {
+    "FID": {
+      "present_in_rows": 14732,
+      "unique_values": 14732,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "0",
+          "count": 1
+        },
+        {
+          "value": "1",
+          "count": 1
+        },
+        {
+          "value": "2",
+          "count": 1
+        },
+        {
+          "value": "3",
+          "count": 1
+        },
+        {
+          "value": "4",
+          "count": 1
+        },
+        {
+          "value": "5",
+          "count": 1
+        },
+        {
+          "value": "6",
+          "count": 1
+        },
+        {
+          "value": "7",
+          "count": 1
+        }
+      ],
+      "examples": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4"
+      ]
+    },
+    "FID_ACCION": {
+      "present_in_rows": 14732,
+      "unique_values": 6242,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "15235",
+          "count": 346
+        },
+        {
+          "value": "15262",
+          "count": 317
+        },
+        {
+          "value": "8353",
+          "count": 289
+        },
+        {
+          "value": "8366",
+          "count": 237
+        },
+        {
+          "value": "2763",
+          "count": 197
+        },
+        {
+          "value": "491",
+          "count": 177
+        },
+        {
+          "value": "2638",
+          "count": 172
+        },
+        {
+          "value": "10357",
+          "count": 155
+        }
+      ],
+      "examples": [
+        "2",
+        "4",
+        "7",
+        "10",
+        "11"
+      ]
+    },
+    "ZH": {
+      "present_in_rows": 14732,
+      "unique_values": 3,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "29",
+          "count": 7561
+        },
+        {
+          "value": "12",
+          "count": 7079
+        },
+        {
+          "value": "1",
+          "count": 92
+        }
+      ],
+      "examples": [
+        "1",
+        "12",
+        "29"
+      ]
+    },
+    "NOMZH": {
+      "present_in_rows": 14732,
+      "unique_values": 3,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "Bajo Magdalena",
+          "count": 7561
+        },
+        {
+          "value": "Caribe - Litoral",
+          "count": 7079
+        },
+        {
+          "value": "Rio Magdalena",
+          "count": 92
+        }
+      ],
+      "examples": [
+        "Rio Magdalena",
+        "Caribe - Litoral",
+        "Bajo Magdalena"
+      ]
+    },
+    "SZH": {
+      "present_in_rows": 14732,
+      "unique_values": 5,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "1206",
+          "count": 7079
+        },
+        {
+          "value": "2903",
+          "count": 3271
+        },
+        {
+          "value": "2909",
+          "count": 2329
+        },
+        {
+          "value": "2904",
+          "count": 1961
+        },
+        {
+          "value": "1",
+          "count": 92
+        }
+      ],
+      "examples": [
+        "1",
+        "1206",
+        "2903",
+        "2904",
+        "2909"
+      ]
+    },
+    "NOMSZH": {
+      "present_in_rows": 14732,
+      "unique_values": 5,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "Arroyos Directos al Caribe",
+          "count": 7079
+        },
+        {
+          "value": "Canal del Dique",
+          "count": 3271
+        },
+        {
+          "value": "Cienaga Mallorquin",
+          "count": 2329
+        },
+        {
+          "value": "Directos al Bajo Magdalena entre Calamar y desembocadura al mar Caribe (mi)",
+          "count": 1961
+        },
+        {
+          "value": "Rio Magdalena",
+          "count": 92
+        }
+      ],
+      "examples": [
+        "Rio Magdalena",
+        "Arroyos Directos al Caribe",
+        "Canal del Dique",
+        "Directos al Bajo Magdalena entre Calamar y desembocadura al mar Caribe (mi)",
+        "Cienaga Mallorquin"
+      ]
+    },
+    "UH": {
+      "present_in_rows": 14732,
+      "unique_values": 100,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "290308",
+          "count": 1128
+        },
+        {
+          "value": "120617",
+          "count": 749
+        },
+        {
+          "value": "120623",
+          "count": 594
+        },
+        {
+          "value": "290902",
+          "count": 458
+        },
+        {
+          "value": "290410",
+          "count": 406
+        },
+        {
+          "value": "290329",
+          "count": 404
+        },
+        {
+          "value": "290901",
+          "count": 402
+        },
+        {
+          "value": "120624",
+          "count": 392
+        }
+      ],
+      "examples": [
+        "1",
+        "120601",
+        "120602",
+        "120603",
+        "120604"
+      ]
+    },
+    "NOMUH": {
+      "present_in_rows": 14732,
+      "unique_values": 97,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "A. Banco",
+          "count": 1128
+        },
+        {
+          "value": "A. Grande",
+          "count": 828
+        },
+        {
+          "value": "A. Viejo",
+          "count": 749
+        },
+        {
+          "value": "A. Ronco",
+          "count": 594
+        },
+        {
+          "value": "Plano Costero",
+          "count": 458
+        },
+        {
+          "value": "C. Ambrosio",
+          "count": 404
+        },
+        {
+          "value": "Cienaga Mayorquin",
+          "count": 402
+        },
+        {
+          "value": "C. del Luruaco",
+          "count": 392
+        }
+      ],
+      "examples": [
+        "Rio Magdalena",
+        "A. Grande",
+        "C. Balboa",
+        "A. Cucambito",
+        "A. Ostion"
+      ]
+    },
+    "Val_Priori": {
+      "present_in_rows": 14732,
+      "unique_values": 3,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "Alto",
+          "count": 6505
+        },
+        {
+          "value": "Medio",
+          "count": 5390
+        },
+        {
+          "value": "Bajo",
+          "count": 2837
+        }
+      ],
+      "examples": [
+        "Bajo",
+        "Alto",
+        "Medio"
+      ]
+    },
+    "Escenarios": {
+      "present_in_rows": 14732,
+      "unique_values": 3,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "Escenario I",
+          "count": 9284
+        },
+        {
+          "value": "Escenario III",
+          "count": 4624
+        },
+        {
+          "value": "Escenario II",
+          "count": 824
+        }
+      ],
+      "examples": [
+        "Escenario II",
+        "Escenario III",
+        "Escenario I"
+      ]
+    },
+    "AccionGen": {
+      "present_in_rows": 14732,
+      "unique_values": 4,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "Preservación",
+          "count": 5815
+        },
+        {
+          "value": "Restauración",
+          "count": 4335
+        },
+        {
+          "value": "Recuperación",
+          "count": 3898
+        },
+        {
+          "value": "Rehabilitación",
+          "count": 684
+        }
+      ],
+      "examples": [
+        "Preservación",
+        "Rehabilitación",
+        "Restauración",
+        "Recuperación"
+      ]
+    },
+    "AccRegiona": {
+      "present_in_rows": 14732,
+      "unique_values": 12,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "Preservación en áreas naturales  de áreas protegidas y prioridades de conservación",
+          "count": 4343
+        },
+        {
+          "value": "Recuperación en áreas transformadas en prioridades de conservación",
+          "count": 2681
+        },
+        {
+          "value": "Restauración en áreas semi-naturales de conectividad ecológica regional",
+          "count": 2138
+        },
+        {
+          "value": "Restauración en áreas semi-naturales en áreas protegidas y prioridades conservación",
+          "count": 1859
+        },
+        {
+          "value": "Preservación en areas naturales de conectividad ecologica regional",
+          "count": 1197
+        },
+        {
+          "value": "Recuperación en áreas transformadas de conectividad ecológica regional",
+          "count": 1043
+        },
+        {
+          "value": "Rehabilitación en áreas transformadas de áreas protegidas",
+          "count": 402
+        },
+        {
+          "value": "Restauración en áreas semi-naturales de ecosistemas estratégicos y estratégias complementarias",
+          "count": 338
+        }
+      ],
+      "examples": [
+        "Preservación en áreas naturales en ecosistemas estrategicos y estrategias complementarias",
+        "Rehabilitación en áreas transformadas de ecosistemas estratégicos y estratégias complementarias",
+        "Restauración en áreas semi-naturales de ecosistemas estratégicos y estratégias complementarias",
+        "Preservación en areas naturales de conectividad ecologica regional",
+        "Recuperación en áreas transformadas de conectividad ecológica regional"
+      ]
+    },
+    "AccRegDesc": {
+      "present_in_rows": 14732,
+      "unique_values": 23,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "Preservación en áreas naturales  en prioridades de conservación",
+          "count": 4133
+        },
+        {
+          "value": "Recuperación en áreas transformadas en prioridades de conservación",
+          "count": 2681
+        },
+        {
+          "value": "Restauración en áreas semi-naturales en prioridades de conservación",
+          "count": 1407
+        },
+        {
+          "value": "Restauración en áreas semi-naturales sin ninguna figura legal",
+          "count": 1394
+        },
+        {
+          "value": "Recuperación en áreas transformadas en conectividad",
+          "count": 1043
+        },
+        {
+          "value": "Preservación en áreas naturales sin ninguna figura legal",
+          "count": 709
+        },
+        {
+          "value": "Restauración en áreas semi-naturales en conectividad",
+          "count": 683
+        },
+        {
+          "value": "Restauración en áreas semi-naturales en áreas protegidas",
+          "count": 455
+        }
+      ],
+      "examples": [
+        "Preservación en áreas naturales en rondas hídricas",
+        "Rehabilitación en áreas transformadas de rondas hídricas",
+        "Restauración en áreas semi-naturales en rondas hídricas",
+        "Preservación en áreas naturales en conectividad",
+        "Preservación en áreas naturales sin ninguna figura legal"
+      ]
+    },
+    "area": {
+      "present_in_rows": 14732,
+      "unique_values": 6241,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "691,049366",
+          "count": 346
+        },
+        {
+          "value": "125,22446",
+          "count": 317
+        },
+        {
+          "value": "520,084888",
+          "count": 289
+        },
+        {
+          "value": "138,070027",
+          "count": 237
+        },
+        {
+          "value": "1246,08713",
+          "count": 197
+        },
+        {
+          "value": "257,788987",
+          "count": 177
+        },
+        {
+          "value": "217,762725",
+          "count": 172
+        },
+        {
+          "value": "18,982675",
+          "count": 155
+        }
+      ],
+      "examples": [
+        "297,008277",
+        "408,144006",
+        "167,737194",
+        "263,44823",
+        "116,388662"
+      ]
+    },
+    "Shape_Leng": {
+      "present_in_rows": 14732,
+      "unique_values": 6242,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "19596,556688",
+          "count": 346
+        },
+        {
+          "value": "18298,965093",
+          "count": 317
+        },
+        {
+          "value": "47907,91306",
+          "count": 289
+        },
+        {
+          "value": "17683,126829",
+          "count": 237
+        },
+        {
+          "value": "26615,394479",
+          "count": 197
+        },
+        {
+          "value": "10828,500359",
+          "count": 177
+        },
+        {
+          "value": "32939,04709",
+          "count": 172
+        },
+        {
+          "value": "2666,544253",
+          "count": 155
+        }
+      ],
+      "examples": [
+        "22836,96234",
+        "30893,665987",
+        "20691,098834",
+        "24418,215062",
+        "14061,725415"
+      ]
+    },
+    "FID_ESCENA": {
+      "present_in_rows": 14732,
+      "unique_values": 10264,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "11442",
+          "count": 103
+        },
+        {
+          "value": "1885",
+          "count": 53
+        },
+        {
+          "value": "3388",
+          "count": 50
+        },
+        {
+          "value": "3556",
+          "count": 42
+        },
+        {
+          "value": "9897",
+          "count": 39
+        },
+        {
+          "value": "6534",
+          "count": 39
+        },
+        {
+          "value": "2914",
+          "count": 39
+        },
+        {
+          "value": "11441",
+          "count": 37
+        }
+      ],
+      "examples": [
+        "4562",
+        "4563",
+        "4564",
+        "2908",
+        "4927"
+      ]
+    },
+    "OBJECTID_1": {
+      "present_in_rows": 14732,
+      "unique_values": 10264,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "45320",
+          "count": 103
+        },
+        {
+          "value": "33543",
+          "count": 53
+        },
+        {
+          "value": "35046",
+          "count": 50
+        },
+        {
+          "value": "35214",
+          "count": 42
+        },
+        {
+          "value": "43383",
+          "count": 39
+        },
+        {
+          "value": "39859",
+          "count": 39
+        },
+        {
+          "value": "34572",
+          "count": 39
+        },
+        {
+          "value": "45319",
+          "count": 37
+        }
+      ],
+      "examples": [
+        "37887",
+        "37888",
+        "37889",
+        "34566",
+        "38252"
+      ]
+    },
+    "ESC_I": {
+      "present_in_rows": 14732,
+      "unique_values": 2,
+      "empty_value_count": 5433,
+      "top_values": [
+        {
+          "value": "Escenario I",
+          "count": 9299
+        },
+        {
+          "value": "(empty)",
+          "count": 5433
+        }
+      ],
+      "examples": [
+        "",
+        "Escenario I"
+      ]
+    },
+    "DESC_I": {
+      "present_in_rows": 14732,
+      "unique_values": 7,
+      "empty_value_count": 5433,
+      "top_values": [
+        {
+          "value": "Areas potenciales del SIRAP Caribe",
+          "count": 8222
+        },
+        {
+          "value": "(empty)",
+          "count": 5433
+        },
+        {
+          "value": "DMI Palmar - Titi",
+          "count": 558
+        },
+        {
+          "value": "PNR Los Rosales",
+          "count": 201
+        },
+        {
+          "value": "RFP El Palomar",
+          "count": 172
+        },
+        {
+          "value": "DMI Luriza",
+          "count": 120
+        },
+        {
+          "value": "RNSC_LosCharcones",
+          "count": 26
+        }
+      ],
+      "examples": [
+        "",
+        "Areas potenciales del SIRAP Caribe",
+        "RFP El Palomar",
+        "DMI Palmar - Titi",
+        "PNR Los Rosales"
+      ]
+    },
+    "ESC_III": {
+      "present_in_rows": 14732,
+      "unique_values": 2,
+      "empty_value_count": 4789,
+      "top_values": [
+        {
+          "value": "Escenario III",
+          "count": 9943
+        },
+        {
+          "value": "(empty)",
+          "count": 4789
+        }
+      ],
+      "examples": [
+        "Escenario III",
+        ""
+      ]
+    },
+    "DESC_III": {
+      "present_in_rows": 14732,
+      "unique_values": 5,
+      "empty_value_count": 4789,
+      "top_values": [
+        {
+          "value": "(empty)",
+          "count": 4789
+        },
+        {
+          "value": "Conectividad",
+          "count": 4267
+        },
+        {
+          "value": "Áreas naturales y semi-naturales sin ninguna figura legal",
+          "count": 2456
+        },
+        {
+          "value": "Suelos",
+          "count": 2074
+        },
+        {
+          "value": "Suelos_Conectividad",
+          "count": 1146
+        }
+      ],
+      "examples": [
+        "Áreas naturales y semi-naturales sin ninguna figura legal",
+        "Conectividad",
+        "Suelos_Conectividad",
+        "",
+        "Suelos"
+      ]
+    },
+    "ESC_INT": {
+      "present_in_rows": 14732,
+      "unique_values": 8,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "Escenario III",
+          "count": 5437
+        },
+        {
+          "value": "Escenario I y II",
+          "count": 3757
+        },
+        {
+          "value": "Escenario I, II y III",
+          "count": 3632
+        },
+        {
+          "value": "Escenario I",
+          "count": 976
+        },
+        {
+          "value": "Escenario I y III",
+          "count": 847
+        },
+        {
+          "value": "Escenario II",
+          "count": 36
+        },
+        {
+          "value": "Escenario II y III",
+          "count": 33
+        },
+        {
+          "value": "Escenartio I y III",
+          "count": 14
+        }
+      ],
+      "examples": [
+        "Escenario III",
+        "Escenario I, II y III",
+        "Escenario I y III",
+        "Escenario I",
+        "Escenario I y II"
+      ]
+    },
+    "AREA_HA": {
+      "present_in_rows": 14732,
+      "unique_values": 9417,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "0",
+          "count": 169
+        },
+        {
+          "value": "0,000001",
+          "count": 126
+        },
+        {
+          "value": "2230,913492",
+          "count": 103
+        },
+        {
+          "value": "655,199199",
+          "count": 53
+        },
+        {
+          "value": "636,326672",
+          "count": 50
+        },
+        {
+          "value": "217,14341",
+          "count": 42
+        },
+        {
+          "value": "468,058341",
+          "count": 39
+        },
+        {
+          "value": "299,753594",
+          "count": 39
+        }
+      ],
+      "examples": [
+        "0,025898",
+        "0,022905",
+        "0,035035",
+        "0,001859",
+        "0,014403"
+      ]
+    },
+    "Escenari_1": {
+      "present_in_rows": 14732,
+      "unique_values": 2,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "Escenario I",
+          "count": 9295
+        },
+        {
+          "value": "Escenario III",
+          "count": 5437
+        }
+      ],
+      "examples": [
+        "Escenario III",
+        "Escenario I"
+      ]
+    },
+    "Descripcio": {
+      "present_in_rows": 14732,
+      "unique_values": 13,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "Prioridades de conservación",
+          "count": 7153
+        },
+        {
+          "value": "Conectividad",
+          "count": 2572
+        },
+        {
+          "value": "Sin ninguna figura legal",
+          "count": 2349
+        },
+        {
+          "value": "Áreas protegidas",
+          "count": 1007
+        },
+        {
+          "value": "Prioridades de conservación y POMCAS",
+          "count": 794
+        },
+        {
+          "value": "Suelos",
+          "count": 512
+        },
+        {
+          "value": "Prioridades de conservación y rondas hídricas",
+          "count": 240
+        },
+        {
+          "value": "Áreas protegidas y POMCAS",
+          "count": 41
+        }
+      ],
+      "examples": [
+        "Sin ninguna figura legal",
+        "Conectividad",
+        "Prioridades de conservación",
+        "Suelos",
+        "Áreas protegidas"
+      ]
+    },
+    "Zona": {
+      "present_in_rows": 14732,
+      "unique_values": 6,
+      "empty_value_count": 13655,
+      "top_values": [
+        {
+          "value": "(empty)",
+          "count": 13655
+        },
+        {
+          "value": "Palmar Titi",
+          "count": 558
+        },
+        {
+          "value": "PRN Los Rosales",
+          "count": 201
+        },
+        {
+          "value": "RFP Palomar",
+          "count": 172
+        },
+        {
+          "value": "DMI Luriza",
+          "count": 120
+        },
+        {
+          "value": "RNSC Los Charcones",
+          "count": 26
+        }
+      ],
+      "examples": [
+        "",
+        "RFP Palomar",
+        "Palmar Titi",
+        "PRN Los Rosales",
+        "RNSC Los Charcones"
+      ]
+    },
+    "Cat_Runap": {
+      "present_in_rows": 14732,
+      "unique_values": 2,
+      "empty_value_count": 13655,
+      "top_values": [
+        {
+          "value": "(empty)",
+          "count": 13655
+        },
+        {
+          "value": "Runap",
+          "count": 1077
+        }
+      ],
+      "examples": [
+        "",
+        "Runap"
+      ]
+    },
+    "NOM_APC": {
+      "present_in_rows": 14732,
+      "unique_values": 7,
+      "empty_value_count": 8331,
+      "top_values": [
+        {
+          "value": "(empty)",
+          "count": 8331
+        },
+        {
+          "value": "Complejo de bosques y arbustales secos del corredor Turbaco-Canalete-Tubará'",
+          "count": 2632
+        },
+        {
+          "value": "Complejo de humedales y bosques secos del Guajaro",
+          "count": 1558
+        },
+        {
+          "value": "Blanco - Totumo - Bijibana",
+          "count": 1069
+        },
+        {
+          "value": "Complejo cenagoso El Totumo y La Venia",
+          "count": 897
+        },
+        {
+          "value": "Complejo cenagoso de El Uvero-La Poza",
+          "count": 219
+        },
+        {
+          "value": "Complejo cenagoso del Canal del Dique",
+          "count": 26
+        }
+      ],
+      "examples": [
+        "",
+        "Complejo cenagoso de El Uvero-La Poza",
+        "Complejo de bosques y arbustales secos del corredor Turbaco-Canalete-Tubará'",
+        "Complejo cenagoso El Totumo y La Venia",
+        "Complejo de humedales y bosques secos del Guajaro"
+      ]
+    },
+    "CAT_APC": {
+      "present_in_rows": 14732,
+      "unique_values": 3,
+      "empty_value_count": 8331,
+      "top_values": [
+        {
+          "value": "(empty)",
+          "count": 8331
+        },
+        {
+          "value": "PRIORIZACION PORTAFOLIO LLANOS, CARIBE, ANDES Y PACIFICO",
+          "count": 5332
+        },
+        {
+          "value": "CRA",
+          "count": 1069
+        }
+      ],
+      "examples": [
+        "",
+        "PRIORIZACION PORTAFOLIO LLANOS, CARIBE, ANDES Y PACIFICO",
+        "CRA"
+      ]
+    },
+    "Shape_Le_1": {
+      "present_in_rows": 14732,
+      "unique_values": 10228,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "71604,464484",
+          "count": 103
+        },
+        {
+          "value": "23124,375827",
+          "count": 53
+        },
+        {
+          "value": "31022,942884",
+          "count": 50
+        },
+        {
+          "value": "12728,244246",
+          "count": 42
+        },
+        {
+          "value": "33172,366841",
+          "count": 39
+        },
+        {
+          "value": "19914,777514",
+          "count": 39
+        },
+        {
+          "value": "23405,161501",
+          "count": 39
+        },
+        {
+          "value": "30133,256003",
+          "count": 37
+        }
+      ],
+      "examples": [
+        "161,616129",
+        "149,824113",
+        "143,852822",
+        "31,458447",
+        "69,306931"
+      ]
+    },
+    "Shape_Ar_1": {
+      "present_in_rows": 14732,
+      "unique_values": 10224,
+      "empty_value_count": 0,
+      "top_values": [
+        {
+          "value": "22309134,9174",
+          "count": 103
+        },
+        {
+          "value": "6551991,99284",
+          "count": 53
+        },
+        {
+          "value": "6363266,71993",
+          "count": 50
+        },
+        {
+          "value": "2171434,09707",
+          "count": 42
+        },
+        {
+          "value": "4680583,41442",
+          "count": 39
+        },
+        {
+          "value": "2997535,94069",
+          "count": 39
+        },
+        {
+          "value": "1282480,23588",
+          "count": 39
+        },
+        {
+          "value": "11938008,77",
+          "count": 37
+        }
+      ],
+      "examples": [
+        "258,975219",
+        "229,049804",
+        "350,353015",
+        "18,593853",
+        "144,034328"
+      ]
+    }
+  },
+  "original_identifiers_observed": {
+    "FID": {
+      "unique": 14732,
+      "examples": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4"
+      ]
+    },
+    "FID_ACCION": {
+      "unique": 6242,
+      "examples": [
+        "2",
+        "4",
+        "7",
+        "10",
+        "11"
+      ]
+    },
+    "ZH": {
+      "unique": 3,
+      "examples": [
+        "1",
+        "12",
+        "29"
+      ]
+    },
+    "NOMZH": {
+      "unique": 3,
+      "examples": [
+        "Rio Magdalena",
+        "Caribe - Litoral",
+        "Bajo Magdalena"
+      ]
+    },
+    "SZH": {
+      "unique": 5,
+      "examples": [
+        "1",
+        "1206",
+        "2903",
+        "2904",
+        "2909"
+      ]
+    },
+    "NOMSZH": {
+      "unique": 5,
+      "examples": [
+        "Rio Magdalena",
+        "Arroyos Directos al Caribe",
+        "Canal del Dique",
+        "Directos al Bajo Magdalena entre Calamar y desembocadura al mar Caribe (mi)",
+        "Cienaga Mallorquin"
+      ]
+    },
+    "UH": {
+      "unique": 100,
+      "examples": [
+        "1",
+        "120601",
+        "120602",
+        "120603",
+        "120604"
+      ]
+    },
+    "NOMUH": {
+      "unique": 97,
+      "examples": [
+        "Rio Magdalena",
+        "A. Grande",
+        "C. Balboa",
+        "A. Cucambito",
+        "A. Ostion"
+      ]
+    },
+    "FID_ESCENA": {
+      "unique": 10264,
+      "examples": [
+        "4562",
+        "4563",
+        "4564",
+        "2908",
+        "4927"
+      ]
+    },
+    "OBJECTID_1": {
+      "unique": 10264,
+      "examples": [
+        "37887",
+        "37888",
+        "37889",
+        "34566",
+        "38252"
+      ]
+    }
+  },
+  "groupings": {
+    "by_name_top": [
+      [
+        "Bajo Magdalena",
+        7561
+      ],
+      [
+        "Caribe - Litoral",
+        7079
+      ],
+      [
+        "Rio Magdalena",
+        92
+      ]
+    ],
+    "by_styleUrl": [
+      [
+        "#PolyStyle011",
+        9295
+      ],
+      [
+        "#PolyStyle00",
+        5437
+      ]
+    ],
+    "candidate_group_fields_observed": [
+      "NOMZH",
+      "NOMSZH",
+      "NOMUH",
+      "Val_Priori",
+      "Escenarios",
+      "AccionGen",
+      "Descripcio"
+    ],
+    "group_field_summaries": {
+      "NOMZH": [
+        {
+          "value": "Bajo Magdalena",
+          "count": 7561
+        },
+        {
+          "value": "Caribe - Litoral",
+          "count": 7079
+        },
+        {
+          "value": "Rio Magdalena",
+          "count": 92
+        }
+      ],
+      "NOMSZH": [
+        {
+          "value": "Arroyos Directos al Caribe",
+          "count": 7079
+        },
+        {
+          "value": "Canal del Dique",
+          "count": 3271
+        },
+        {
+          "value": "Cienaga Mallorquin",
+          "count": 2329
+        },
+        {
+          "value": "Directos al Bajo Magdalena entre Calamar y desembocadura al mar Caribe (mi)",
+          "count": 1961
+        },
+        {
+          "value": "Rio Magdalena",
+          "count": 92
+        }
+      ],
+      "Val_Priori": [
+        {
+          "value": "Alto",
+          "count": 6505
+        },
+        {
+          "value": "Medio",
+          "count": 5390
+        },
+        {
+          "value": "Bajo",
+          "count": 2837
+        }
+      ],
+      "Escenarios": [
+        {
+          "value": "Escenario I",
+          "count": 9284
+        },
+        {
+          "value": "Escenario III",
+          "count": 4624
+        },
+        {
+          "value": "Escenario II",
+          "count": 824
+        }
+      ],
+      "AccionGen": [
+        {
+          "value": "Preservación",
+          "count": 5815
+        },
+        {
+          "value": "Restauración",
+          "count": 4335
+        },
+        {
+          "value": "Recuperación",
+          "count": 3898
+        },
+        {
+          "value": "Rehabilitación",
+          "count": 684
+        }
+      ]
+    }
+  },
+  "validity": {
+    "placemarks_with_empty_or_missing_coordinates": 0,
+    "invalid_coordinate_tokens": 0,
+    "coordinate_blocks_with_fewer_than_4_vertices": 0,
+    "description_attr_parse_errors": 0,
+    "placemarks_without_attribute_table_pairs": 0
+  },
+  "samples": [
+    {
+      "id": "ID_00000",
+      "name": "Rio Magdalena",
+      "styleUrl": "#PolyStyle00",
+      "polygon_count": 1,
+      "multi_geometry": true,
+      "vertex_sample_count": 10,
+      "attribute_keys": [
+        "FID",
+        "FID_ACCION",
+        "ZH",
+        "NOMZH",
+        "SZH",
+        "NOMSZH",
+        "UH",
+        "NOMUH",
+        "Val_Priori",
+        "Escenarios",
+        "AccionGen",
+        "AccRegiona",
+        "AccRegDesc",
+        "area",
+        "Shape_Leng",
+        "FID_ESCENA",
+        "OBJECTID_1",
+        "ESC_I",
+        "DESC_I",
+        "ESC_III",
+        "DESC_III",
+        "ESC_INT",
+        "AREA_HA",
+        "Escenari_1",
+        "Descripcio",
+        "Zona",
+        "Cat_Runap",
+        "NOM_APC",
+        "CAT_APC",
+        "Shape_Le_1",
+        "Shape_Ar_1"
+      ],
+      "attributes_sample": {
+        "FID": "0",
+        "FID_ACCION": "2",
+        "ZH": "1",
+        "NOMZH": "Rio Magdalena",
+        "SZH": "1",
+        "NOMSZH": "Rio Magdalena",
+        "UH": "1",
+        "NOMUH": "Rio Magdalena",
+        "Val_Priori": "Bajo",
+        "Escenarios": "Escenario II",
+        "AccionGen": "Preservación",
+        "AccRegiona": "Preservación en áreas naturales en ecosistemas estrategicos y estrategias complementarias"
+      }
+    },
+    {
+      "id": "ID_00001",
+      "name": "Rio Magdalena",
+      "styleUrl": "#PolyStyle00",
+      "polygon_count": 1,
+      "multi_geometry": true,
+      "vertex_sample_count": 11,
+      "attribute_keys": [
+        "FID",
+        "FID_ACCION",
+        "ZH",
+        "NOMZH",
+        "SZH",
+        "NOMSZH",
+        "UH",
+        "NOMUH",
+        "Val_Priori",
+        "Escenarios",
+        "AccionGen",
+        "AccRegiona",
+        "AccRegDesc",
+        "area",
+        "Shape_Leng",
+        "FID_ESCENA",
+        "OBJECTID_1",
+        "ESC_I",
+        "DESC_I",
+        "ESC_III",
+        "DESC_III",
+        "ESC_INT",
+        "AREA_HA",
+        "Escenari_1",
+        "Descripcio",
+        "Zona",
+        "Cat_Runap",
+        "NOM_APC",
+        "CAT_APC",
+        "Shape_Le_1",
+        "Shape_Ar_1"
+      ],
+      "attributes_sample": {
+        "FID": "1",
+        "FID_ACCION": "2",
+        "ZH": "1",
+        "NOMZH": "Rio Magdalena",
+        "SZH": "1",
+        "NOMSZH": "Rio Magdalena",
+        "UH": "1",
+        "NOMUH": "Rio Magdalena",
+        "Val_Priori": "Bajo",
+        "Escenarios": "Escenario II",
+        "AccionGen": "Preservación",
+        "AccRegiona": "Preservación en áreas naturales en ecosistemas estrategicos y estrategias complementarias"
+      }
+    },
+    {
+      "id": "ID_00002",
+      "name": "Rio Magdalena",
+      "styleUrl": "#PolyStyle00",
+      "polygon_count": 1,
+      "multi_geometry": true,
+      "vertex_sample_count": 11,
+      "attribute_keys": [
+        "FID",
+        "FID_ACCION",
+        "ZH",
+        "NOMZH",
+        "SZH",
+        "NOMSZH",
+        "UH",
+        "NOMUH",
+        "Val_Priori",
+        "Escenarios",
+        "AccionGen",
+        "AccRegiona",
+        "AccRegDesc",
+        "area",
+        "Shape_Leng",
+        "FID_ESCENA",
+        "OBJECTID_1",
+        "ESC_I",
+        "DESC_I",
+        "ESC_III",
+        "DESC_III",
+        "ESC_INT",
+        "AREA_HA",
+        "Escenari_1",
+        "Descripcio",
+        "Zona",
+        "Cat_Runap",
+        "NOM_APC",
+        "CAT_APC",
+        "Shape_Le_1",
+        "Shape_Ar_1"
+      ],
+      "attributes_sample": {
+        "FID": "2",
+        "FID_ACCION": "2",
+        "ZH": "1",
+        "NOMZH": "Rio Magdalena",
+        "SZH": "1",
+        "NOMSZH": "Rio Magdalena",
+        "UH": "1",
+        "NOMUH": "Rio Magdalena",
+        "Val_Priori": "Bajo",
+        "Escenarios": "Escenario II",
+        "AccionGen": "Preservación",
+        "AccRegiona": "Preservación en áreas naturales en ecosistemas estrategicos y estrategias complementarias"
+      }
+    }
+  ],
+  "notes": [
+    "No ExtendedData/SimpleData schemas found; attributes appear embedded as HTML tables inside Placemark description CDATA (ArcGIS-style export).",
+    "Folder description refers to prioritization of hydrographic units in Atlántico department; do not assume polygons are individual mangroves.",
+    "Only attribute names/values observed in the file are listed; no invented fields.",
+    "Attribute numeric fields in HTML use comma decimals; KML coordinates use point decimals."
+  ]
+}

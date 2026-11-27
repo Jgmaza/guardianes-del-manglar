@@ -1,0 +1,66 @@
+{
+  "fixture": true,
+  "note": "Datos de demostración para UI. No son reportes reales recibidos por la C.R.A.",
+  "reports": [
+    {
+      "id": "fixture-report-001",
+      "trackingCode": "GDM-FIX001",
+      "channel": "pwa",
+      "status": "under_review",
+      "categoryCode": "uncategorized",
+      "categoryLabel": "Sin categoría asignada",
+      "description": "[FIXTURE] Ejemplo de observación ciudadana cerca de zona costera.",
+      "location": {
+        "longitude": -74.85,
+        "latitude": 10.98,
+        "accuracyMeters": 15,
+        "source": "device_gps"
+      },
+      "priorityHint": "Alto",
+      "observedAt": "2026-11-26T15:00:00.000Z",
+      "receivedAt": "2026-11-26T15:01:00.000Z",
+      "evidenceCount": 1,
+      "hasPreliminaryAlert": false
+    },
+    {
+      "id": "fixture-report-002",
+      "trackingCode": "GDM-FIX002",
+      "channel": "whatsapp",
+      "status": "submitted",
+      "categoryCode": "uncategorized",
+      "categoryLabel": "Sin categoría asignada",
+      "description": "[FIXTURE] Reporte de prueba vía canal WhatsApp (simulado).",
+      "location": {
+        "longitude": -74.92,
+        "latitude": 10.45,
+        "accuracyMeters": 40,
+        "source": "whatsapp_shared_location"
+      },
+      "priorityHint": "Medio",
+      "observedAt": "2026-11-27T10:00:00.000Z",
+      "receivedAt": "2026-11-27T10:02:00.000Z",
+      "evidenceCount": 0,
+      "hasPreliminaryAlert": false
+    },
+    {
+      "id": "fixture-report-003",
+      "trackingCode": "GDM-FIX003",
+      "channel": "pwa",
+      "status": "alerted",
+      "categoryCode": "uncategorized",
+      "categoryLabel": "Sin categoría asignada",
+      "description": "[FIXTURE] Caso con alerta preliminar de demostración.",
+      "location": {
+        "longitude": -74.8,
+        "latitude": 10.9,
+        "accuracyMeters": 20,
+        "source": "map_pin"
+      },
+      "priorityHint": "Alto",
+      "observedAt": "2026-11-25T12:00:00.000Z",
+      "receivedAt": "2026-11-25T12:05:00.000Z",
+      "evidenceCount": 2,
+      "hasPreliminaryAlert": true
+    }
+  ]
+}
