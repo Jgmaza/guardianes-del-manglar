@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRA ManglarVivo — Monitoreo Ecosistémico</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{colors:{mg:{950:'#072a20',900:'#0b3b2c',800:'#115740',700:'#166a4d',600:'#1a8061',500:'#10b981',100:'#d1fae5',50:'#ecfdf5'},slate2:'#eef2f1'}}}}</script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#eef2f1;color:#1e293b}
+.pin{width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center}
+.pin span{transform:rotate(45deg);color:#fff;font-weight:700;font-size:11px}
+.card-sel{outline:3px solid #10b981}
+.leaflet-container{font-family:inherit}
+.scroll::-webkit-scrollbar{width:8px}.scroll::-webkit-scrollbar-thumb{background:#b6c4be;border-radius:8px}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #f59e0b;outline-offset:2px}
+@keyframes pulse2{0%{box-shadow:0 0 0 0 rgba(220,38,38,.6)}100%{box-shadow:0 0 0 14px rgba(220,38,38,0)}}
+.crit{animation:pulse2 1.6s infinite}
+</style>
+</head>
+<body class="lg:h-screen lg:overflow-hidden flex flex-col">
+
+<header class="bg-mg-900 text-white px-4 py-3 flex flex-wrap items-center gap-3 justify-between shadow-lg">
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 rounded-xl bg-mg-500 flex items-center justify-center"><i data-lucide="trees" class="w-6 h-6 text-mg-950"></i></div>
+    <div>
+      <h1 class="font-bold text-lg leading-tight">CRA ManglarVivo <span class="font-normal text-mg-100">— Monitoreo Ecosistémico</span></h1>
+      <p class="text-xs text-emerald-200">Corporación Autónoma Regional del Atlántico · Ciénaga de Mallorquín, Barranquilla</p>
+    </div>
+  </div>
+  <div class="flex flex-wrap items-center gap-3">
+    <div class="bg-mg-950 rounded-full p-1 flex text-sm" role="group" aria-label="Selector de rol">
+      <button id="roleOps" onclick="setRole('ops')" class="px-4 py-1.5 rounded-full font-semibold flex items-center gap-1.5"><i data-lucide="shield-check" class="w-4 h-4"></i>Vista Operativa CRA</button>
+      <button id="roleCom" onclick="setRole('com')" class="px-4 py-1.5 rounded-full font-semibold flex items-center gap-1.5"><i data-lucide="users" class="w-4 h-4"></i>Vista Comunidad / Turista</button>
+    </div>
+    <a id="waBtn" href="https://wa.me/573000000000?text=Hola%20CRA%2C%20quiero%20reportar%20un%20hecho%20en%20el%20manglar" target="_blank" rel="noopener" class="hidden items-center gap-2 bg-green-500 hover:bg-green-400 text-white font-bold px-4 py-2 rounded-lg shadow ring-2 ring-white/60"><i data-lucide="message-circle" class="w-5 h-5"></i>Reportar vía WhatsApp</a>
+    <button onclick="openSim()" class="bg-amber-500 hover:bg-amber-400 text-mg-950 font-bold px-4 py-2 rounded-lg flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i>Simular Reporte WhatsApp</button>
+  </div>
+</header>
+
+<section id="kpis" class="grid grid-cols-2 lg:grid-cols-4 gap-3 px-4 py-3"></section>
+
+<main class="flex-1 min-h-0 flex flex-col lg:flex-row gap-3 px-4 pb-4">
+  <div class="relative lg:w-[60%] h-[55vh] lg:h-auto rounded-2xl overflow-hidden shadow border border-slate-300 bg-white">
+    <div id="map" class="absolute inset-0"></div>
+    <div class="absolute top-3 right-3 z-[1000] bg-white/95 rounded-xl shadow-lg p-3 text-sm space-y-2 border border-slate-200">
+      <p class="font-bold text-mg-900 flex items-center gap-1.5"><i data-lucide="layers" class="w-4 h-4"></i>Capas satelitales</p>
+      <label class="flex items-center gap-2 cursor-pointer"><input id="tgNdvi" type="checkbox" class="accent-emerald-600 w-4 h-4">Índice de Vegetación (NDVI)</label>
+      <label class="flex items-center gap-2 cursor-pointer"><input id="tgZones" type="checkbox" checked class="accent-emerald-600 w-4 h-4">Zonas Protegidas</label>
+      <label class="flex items-center gap-2 cursor-pointer"><input id="tgSat" type="checkbox" class="accent-emerald-600 w-4 h-4">Base satelital</label>
+      <div id="ndviLegend" class="hidden pt-1"><div class="h-2 rounded" style="background:linear-gradient(90deg,#b91c1c,#f59e0b,#84cc16,#15803d)"></div><div class="flex justify-between text-[10px] text-slate-600"><span>0.2 Estrés</span><span>0.9 Denso</span></div></div>
+    </div>
+    <div id="legend" class="absolute bottom-3 left-3 z-[1000] bg-white/95 rounded-lg shadow px-3 py-2 text-xs border border-slate-200"></div>
+  </div>
+
+  <aside class="lg:w-[40%] flex flex-col min-h-0 bg-white rounded-2xl shadow border border-slate-300 overflow-hidden">
+    <div class="flex border-b border-slate-200 bg-slate-50" role="tablist">
+      <button id="tab-alerts" onclick="setTab('alerts')" class="flex-1 px-2 py-3 text-sm font-semibold flex items-center justify-center gap-1.5"><i data-lucide="siren" class="w-4 h-4"></i>Alertas</button>
+      <button id="tab-bio" onclick="setTab('bio')" class="flex-1 px-2 py-3 text-sm font-semibold flex items-center justify-center gap-1.5"><i data-lucide="bird" class="w-4 h-4"></i>Biodiversidad</button>
+      <button id="tab-events" onclick="setTab('events')" class="flex-1 px-2 py-3 text-sm font-semibold flex items-center justify-center gap-1.5"><i data-lucide="calendar-heart" class="w-4 h-4"></i>Alianzas</button>
+    </div>
+    <div id="panelHead" class="px-4 py-2 text-xs text-slate-600 border-b border-slate-100"></div>
+    <div id="list" class="flex-1 min-h-0 overflow-y-auto scroll p-3 space-y-3 max-h-[70vh] lg:max-h-none"></div>
+  </aside>
+</main>
+
+<div id="modal" class="hidden fixed inset-0 z-[3000] bg-black/50 items-center justify-center p-4" onclick="if(event.target===this)closeModal()">
+  <div id="modalBox" class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto p-5"></div>
+</div>
+<div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[4000] hidden bg-mg-900 text-white px-4 py-2.5 rounded-lg shadow-xl text-sm font-medium"></div>
+
+<script>
+const CENTER=[11.045,-74.855];
+const URG={'Crítica':0,'Alta':1,'Media':2};
+const URG_ST={'Crítica':{c:'#dc2626',b:'bg-red-100 text-red-800 border-red-300'},'Alta':{c:'#f59e0b',b:'bg-amber-100 text-amber-800 border-amber-300'},'Media':{c:'#ca8a04',b:'bg-yellow-50 text-yellow-800 border-yellow-300'}};
+const ST_STYLE={'Recibida':'bg-slate-200 text-slate-800','En atención':'bg-amber-100 text-amber-800','Resuelta':'bg-emerald-100 text-emerald-800'};
+const TIPO_ICON={'Tala':'axe','Quema':'flame','Escombros':'trash-2'};
+const TAG_ST={'Mangle rojo':'bg-red-50 text-red-800 border-red-200','Mangle negro':'bg-slate-200 text-slate-800 border-slate-300','Cangrejo azul':'bg-blue-100 text-blue-800 border-blue-300','Garza blanca':'bg-slate-100 text-slate-700 border-slate-300','Iguana verde':'bg-lime-100 text-lime-800 border-lime-300','Pelícano':'bg-orange-50 text-orange-800 border-orange-200'};
+
+let alerts=[
+ {id:1,tipo:'Tala',urg:'Crítica',lat:11.0482,lng:-74.8591,rep:'Habitante local',st:'Recibida',min:8,zona:'Sector Las Flores',desc:'Grupo de 4 personas talando mangle negro con motosierra. Ya hay troncos apilados.'},
+ {id:2,tipo:'Quema',urg:'Crítica',lat:11.0415,lng:-74.8508,rep:'Habitante local',st:'En atención',min:35,zona:'Margen sur de la ciénaga',desc:'Columna de humo y quema de residuos vegetales junto al manglar.'},
+ {id:3,tipo:'Escombros',urg:'Alta',lat:11.0439,lng:-74.8632,rep:'Habitante local',st:'Recibida',min:90,zona:'Vía a Puerto Mocho',desc:'Volqueta descargando escombros de construcción sobre zona de raíces.'},
+ {id:4,tipo:'Tala',urg:'Alta',lat:11.0521,lng:-74.8527,rep:'Turista',st:'Recibida',min:140,zona:'Sendero ecoturístico',desc:'Se ven ramas de mangle cortadas recientemente cerca del mirador.'},
+ {id:5,tipo:'Escombros',urg:'Media',lat:11.0377,lng:-74.8574,rep:'Turista',st:'En atención',min:260,zona:'Playa Mallorquín',desc:'Bolsas y llantas acumuladas en el borde del humedal.'},
+ {id:6,tipo:'Quema',urg:'Media',lat:11.0463,lng:-74.8469,rep:'Habitante local',st:'Resuelta',min:720,zona:'Barrio La Playa',desc:'Quema controlada de basura, ya apagada por bomberos.'}
+];
+let bio=[
+ {id:1,titulo:'Colonia de cangrejo azul en raíces',tags:['Cangrejo azul','Mangle rojo'],lat:11.0451,lng:-74.8562,autor:'Ana M. (Voluntaria)',fuente:'Ciencia ciudadana',reviews:true,val:false,grad:'from-blue-500 to-emerald-700',icon:'bug',min:50},
+ {id:2,titulo:'Garza blanca anidando',tags:['Garza blanca'],lat:11.0502,lng:-74.8601,autor:'Observatorio Aves Atlántico',fuente:'Ciencia ciudadana',reviews:true,val:true,grad:'from-slate-300 to-emerald-600',icon:'bird',min:300},
+ {id:3,titulo:'Regeneración de propágulos sembrados',tags:['Mangle rojo'],lat:11.0408,lng:-74.8545,autor:'Imagen satelital Sentinel-2',fuente:'Satélite',reviews:false,val:true,grad:'from-emerald-500 to-mg-900',icon:'satellite',min:1440},
+ {id:4,titulo:'Mangle negro con buena cobertura foliar',tags:['Mangle negro'],lat:11.0489,lng:-74.8518,autor:'Carlos P. (Turista)',fuente:'Ciencia ciudadana',reviews:true,val:false,grad:'from-emerald-700 to-slate-700',icon:'trees',min:180},
+ {id:5,titulo:'Pelícanos y garzas en zona de pesca',tags:['Pelícano','Garza blanca'],lat:11.0368,lng:-74.8601,autor:'Pescadores de Las Flores',fuente:'Ciencia ciudadana',reviews:false,val:false,grad:'from-sky-400 to-teal-700',icon:'fish',min:420}
+];
+let events=[
+ {id:1,org:'Universidad del Norte',tipo:'Siembra',fecha:'2026-12-05',vol:60,ha:1.2,st:'Pendiente',lat:11.0455,lng:-74.8615,imp:{a:1800,r:0,c:14}},
+ {id:2,org:'Puerto de Barranquilla S.A.',tipo:'Limpieza',fecha:'2026-12-02',vol:35,ha:0.8,st:'Pendiente',lat:11.0399,lng:-74.8583,imp:{a:0,r:950,c:6}},
+ {id:3,org:'Universidad Simón Bolívar',tipo:'Siembra',fecha:'2026-12-12',vol:80,ha:1.5,st:'Aprobada',lat:11.0505,lng:-74.8561,imp:{a:2400,r:0,c:19}},
+ {id:4,org:'Fundación Mar Viva',tipo:'Limpieza',fecha:'2026-11-14',vol:48,ha:0.9,st:'Ejecutada',lat:11.0428,lng:-74.8499,imp:{a:0,r:1320,c:8}},
+ {id:5,org:'Cervecería Costeña',tipo:'Siembra',fecha:'2026-12-19',vol:40,ha:1.0,st:'Pendiente',lat:11.0472,lng:-74.8647,imp:{a:1500,r:0,c:12}}
+];
+let role='ops',tab='alerts',selected=null,nextId=100;
+const markers={},polys={};
+
+const map=L.map('map',{zoomControl:true}).setView(CENTER,14);
+const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(map);
+const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Esri World Imagery',maxZoom:19});
+const dataLayer=L.layerGroup().addTo(map);
+const zonesLayer=L.layerGroup().addTo(map);
+const ndviLayer=L.layerGroup();
+
+[[[11.054,-74.868],[11.054,-74.845],[11.036,-74.843],[11.034,-74.864]],[[11.0425,-74.8665],[11.0425,-74.858],[11.0375,-74.858],[11.0375,-74.8665]]].forEach((p,i)=>{
+ L.polygon(p,{color:'#0b3b2c',weight:2.5,dashArray:'8 6',fillColor:'#10b981',fillOpacity:i?0.08:0.06}).bindTooltip(i?'Zona de Recuperación Estricta':'Zona Protegida — Manglar Mallorquín',{sticky:true}).addTo(zonesLayer);
+});
+(function(){
+ const lat0=11.034,lat1=11.054,lng0=-74.868,lng1=-74.843,R=10,C=14;
+ for(let i=0;i<R;i++)for(let j=0;j<C;j++){
+  const a=lat0+(lat1-lat0)*i/R,b=lat0+(lat1-lat0)*(i+1)/R,c=lng0+(lng1-lng0)*j/C,d=lng0+(lng1-lng0)*(j+1)/C;
+  let v=0.55+0.3*Math.sin(i*0.9+1)*Math.cos(j*0.6)+0.12*Math.sin(j*1.7);v=Math.max(0.2,Math.min(0.92,v));
+  const col=v<0.4?'#b91c1c':v<0.55?'#f59e0b':v<0.72?'#84cc16':'#15803d';
+  L.rectangle([[a,c],[b,d]],{stroke:false,fillColor:col,fillOpacity:0.45}).bindTooltip('NDVI '+v.toFixed(2)).addTo(ndviLayer);
+ }
+})();
+document.getElementById('tgNdvi').onchange=e=>{e.target.checked?ndviLayer.addTo(map):map.removeLayer(ndviLayer);document.getElementById('ndviLegend').classList.toggle('hidden',!e.target.checked)};
+document.getElementById('tgZones').onchange=e=>{e.target.checked?zonesLayer.addTo(map):map.removeLayer(zonesLayer)};
+document.getElementById('tgSat').onchange=e=>{if(e.target.checked){sat.addTo(map);map.removeLayer(osm)}else{osm.addTo(map);map.removeLayer(sat)}};
+
+const $=id=>document.getElementById(id);
+const ago=m=>m<60?`hace ${m} min`:m<1440?`hace ${Math.round(m/60)} h`:`hace ${Math.round(m/1440)} d`;
+const approx=(lat,lng)=>[+(lat).toFixed(2),+(lng).toFixed(2)];
+function pinIcon(color,txt,cls=''){return L.divIcon({className:'',html:`<div class="pin ${cls}" style="background:${color}"><span>${txt}</span></div>`,iconSize:[26,26],iconAnchor:[13,26],popupAnchor:[0,-24]})}
+function toast(t){const e=$('toast');e.textContent=t;e.classList.remove('hidden');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.add('hidden'),2800)}
+function icons(){lucide.createIcons()}
+function sortedAlerts(){return [...alerts].sort((a,b)=>(a.st==='Resuelta')-(b.st==='Resuelta')||URG[a.urg]-URG[b.urg]||a.min-b.min)}
+
+function setRole(r){role=r;selected=null;
+ $('roleOps').className='px-4 py-1.5 rounded-full font-semibold flex items-center gap-1.5 '+(r==='ops'?'bg-emerald-400 text-mg-950':'text-emerald-100');
+ $('roleCom').className='px-4 py-1.5 rounded-full font-semibold flex items-center gap-1.5 '+(r==='com'?'bg-emerald-400 text-mg-950':'text-emerald-100');
+ $('waBtn').classList.toggle('hidden',r!=='com');$('waBtn').classList.toggle('inline-flex',r==='com');
+ render();toast(r==='ops'?'Vista Operativa CRA: datos completos y gestión':'Vista Comunidad: ubicaciones sensibles protegidas')}
+function setTab(t){tab=t;selected=null;render()}
+
+function kpiCard(label,val,sub,color,icon){return `<div class="bg-white rounded-xl shadow-sm border border-slate-200 p-3 flex items-center gap-3"><div class="w-11 h-11 rounded-lg flex items-center justify-center" style="background:${color}1a;color:${color}"><i data-lucide="${icon}" class="w-6 h-6"></i></div><div class="min-w-0"><p class="text-2xl font-extrabold leading-none text-slate-900">${val}</p><p class="text-xs font-semibold text-slate-700 mt-1 truncate">${label}</p><p class="text-[11px] text-slate-500 truncate">${sub}</p></div></div>`}
+function renderKPIs(){let h='';
+ if(tab==='alerts'){const act=alerts.filter(a=>a.st!=='Resuelta'),cr=act.filter(a=>a.urg==='Crítica'),at=alerts.filter(a=>a.st==='En atención'),rs=alerts.filter(a=>a.st==='Resuelta');
+  h=kpiCard('Alertas activas',act.length,'Sin resolver','#f59e0b','bell-ring')+kpiCard('Críticas',cr.length,'Requieren acción inmediata','#dc2626','octagon-alert')+kpiCard('En atención',at.length,'Cuadrillas desplegadas','#0b3b2c','truck')+kpiCard('Tasa de resolución',Math.round(rs.length/alerts.length*100)+'%',rs.length+' de '+alerts.length+' tickets','#10b981','check-circle-2')}
+ else if(tab==='bio'){const sp=new Set(bio.flatMap(b=>b.tags)).size,pend=bio.filter(b=>!b.val).length;
+  h=kpiCard('Registros ciudadanos',bio.length,'Fotos y avistamientos','#10b981','camera')+kpiCard('Especies distintas',sp,'Flora y fauna','#0b3b2c','leaf')+kpiCard('Pendientes de validar',pend,'Revisión de biólogos','#f59e0b','microscope')+kpiCard('NDVI promedio',role==='ops'?'0.71':'0.71','Salud de la cobertura','#15803d','satellite')}
+ else{const ap=events.filter(e=>e.st!=='Pendiente'),vol=events.reduce((s,e)=>s+e.vol,0),ha=ap.reduce((s,e)=>s+e.ha,0);
+  h=kpiCard('Solicitudes',events.length,'Empresas y universidades','#2563eb','building-2')+kpiCard('Voluntarios',vol,'Inscritos en total','#2563eb','users')+kpiCard('Aprobadas',ap.length,events.length-ap.length+' pendientes','#0b3b2c','badge-check')+kpiCard('Hectáreas asignadas',ha.toFixed(1),'Polígonos de intervención','#10b981','map')}
+ $('kpis').innerHTML=h}
+
+function alertCard(a){const u=URG_ST[a.urg];const rel=a.rep==='Habitante local'?'<span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800"><i data-lucide="home" class="w-3 h-3"></i>Habitante local</span>':'<span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700"><i data-lucide="camera" class="w-3 h-3"></i>Turista</span>';
+ const nxt={'Recibida':'Pasar a En atención','En atención':'Marcar Resuelta'}[a.st];
+ return `<article onclick="focusAlert(${a.id})" class="cursor-pointer rounded-xl border-l-4 border border-slate-200 bg-white p-3 hover:shadow-md transition ${selected===a.id?'card-sel':''} ${a.st==='Resuelta'?'opacity-70':''}" style="border-left-color:${u.c}">
+ <div class="flex items-center justify-between gap-2"><div class="flex items-center gap-2"><span class="text-[11px] font-bold px-2 py-0.5 rounded-full border ${u.b}">${a.urg.toUpperCase()}</span><span class="font-bold text-sm flex items-center gap-1"><i data-lucide="${TIPO_ICON[a.tipo]}" class="w-4 h-4"></i>${a.tipo}</span></div><span class="text-xs text-slate-500">${ago(a.min)}</span></div>
+ <p class="text-sm text-slate-700 mt-2">${a.desc}</p>
+ <div class="flex flex-wrap items-center gap-2 mt-2 text-xs text-slate-600">${rel}<span class="flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3"></i>${a.zona}</span>${role==='ops'?`<span class="font-mono text-[11px] bg-slate-100 px-1.5 rounded">${a.lat.toFixed(4)}, ${a.lng.toFixed(4)}</span>`:'<span class="flex items-center gap-1 text-slate-500"><i data-lucide="eye-off" class="w-3 h-3"></i>Ubicación exacta protegida</span>'}</div>
+ <div class="flex items-center justify-between mt-3"><span class="text-xs font-semibold px-2.5 py-1 rounded-full ${ST_STYLE[a.st]}">Ticket #${a.id}: ${a.st}</span>
+ ${role==='ops'?(nxt?`<button onclick="event.stopPropagation();advance(${a.id})" class="text-xs font-bold bg-mg-800 hover:bg-mg-700 text-white px-3 py-1.5 rounded-lg">${nxt}</button>`:'<span class="text-xs text-emerald-700 font-semibold flex items-center gap-1"><i data-lucide="check" class="w-4 h-4"></i>Cerrado</span>'):''}</div></article>`}
+
+function bioCard(b){const vb=b.val?'<span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800"><i data-lucide="badge-check" class="w-3 h-3"></i>Validado por biólogo CRA</span>':'<span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800"><i data-lucide="clock" class="w-3 h-3"></i>Pendiente de validación</span>';
+ return `<article onclick="focusBio(${b.id})" class="cursor-pointer rounded-xl border border-slate-200 bg-white overflow-hidden hover:shadow-md transition ${selected===b.id?'card-sel':''}">
+ <div class="h-24 bg-gradient-to-br ${b.grad} flex items-center justify-center relative"><i data-lucide="${b.icon}" class="w-10 h-10 text-white/90"></i><span class="absolute bottom-1 right-2 text-[10px] text-white/80">Foto simulada</span><span class="absolute top-2 left-2 text-[10px] font-bold bg-black/40 text-white px-2 py-0.5 rounded-full">${b.fuente}</span></div>
+ <div class="p-3"><h3 class="font-bold text-sm">${b.titulo}</h3><p class="text-xs text-slate-500">${b.autor} · ${ago(b.min)}</p>
+ <div class="flex flex-wrap gap-1.5 mt-2">${b.tags.map(t=>`<span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border ${TAG_ST[t]}">${t}</span>`).join('')}</div>
+ <div class="flex flex-wrap items-center gap-2 mt-2">${vb}${b.reviews?'<span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200"><i data-lucide="star" class="w-3 h-3"></i>Compartido en Google Reviews</span>':''}</div>
+ ${role==='ops'&&!b.val?`<button onclick="event.stopPropagation();validate(${b.id})" class="mt-3 w-full text-xs font-bold bg-mg-800 hover:bg-mg-700 text-white py-2 rounded-lg flex items-center justify-center gap-1.5"><i data-lucide="microscope" class="w-4 h-4"></i>Validación técnica (Biólogo CRA)</button>`:''}</div></article>`}
+
+function eventCard(e){const stc={Pendiente:'bg-amber-100 text-amber-800',Aprobada:'bg-blue-100 text-blue-800',Ejecutada:'bg-emerald-100 text-emerald-800'}[e.st];
+ return `<article onclick="focusEvent(${e.id})" class="cursor-pointer rounded-xl border-l-4 border border-slate-200 border-l-blue-600 bg-white p-3 hover:shadow-md transition ${selected===e.id?'card-sel':''}">
+ <div class="flex items-start justify-between gap-2"><div><h3 class="font-bold text-sm">${e.org}</h3><p class="text-xs text-slate-500">${e.tipo==='Siembra'?'Siembra de mangle':'Brigada de limpieza'}</p></div><span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${stc}">${e.st}</span></div>
+ <div class="grid grid-cols-3 gap-2 mt-3 text-xs"><div class="bg-blue-50 rounded-lg p-2"><p class="text-slate-500">Fecha</p><p class="font-bold text-blue-900">${e.fecha}</p></div><div class="bg-blue-50 rounded-lg p-2"><p class="text-slate-500">Voluntarios</p><p class="font-bold text-blue-900">${e.vol}</p></div><div class="bg-blue-50 rounded-lg p-2"><p class="text-slate-500">Área</p><p class="font-bold text-blue-900">${e.ha} ha</p></div></div>
+ <div class="flex gap-2 mt-3">${role==='ops'&&e.st==='Pendiente'?`<button onclick="event.stopPropagation();approve(${e.id})" class="flex-1 text-xs font-bold bg-blue-700 hover:bg-blue-600 text-white py-2 rounded-lg">Aprobar / Asignar Polígono</button>`:''}
+ ${role==='com'&&e.st!=='Ejecutada'?`<button onclick="event.stopPropagation();toast('¡Gracias! Te inscribiste como voluntario (simulado)')" class="flex-1 text-xs font-bold bg-blue-700 hover:bg-blue-600 text-white py-2 rounded-lg">Quiero participar</button>`:''}
+ <button onclick="event.stopPropagation();impact(${e.id})" class="flex-1 text-xs font-bold border-2 border-blue-700 text-blue-800 hover:bg-blue-50 py-2 rounded-lg">Ver Impacto</button></div></article>`}
+
+function renderList(){let h='',head='';
+ if(tab==='alerts'){head=role==='ops'?'Ordenadas por urgencia · Clic en una tarjeta para ubicarla en el mapa':'Las ubicaciones exactas de denuncias se ocultan por seguridad de los denunciantes';h=sortedAlerts().map(alertCard).join('')}
+ else if(tab==='bio'){head='Ciencia ciudadana + monitoreo satelital · Clic para ver en el mapa';h=[...bio].sort((a,b)=>a.min-b.min).map(bioCard).join('')}
+ else{head='Solicitudes de brigadas de limpieza y siembra';h=events.map(eventCard).join('')}
+ $('panelHead').textContent=head;$('list').innerHTML=h||'<p class="text-center text-slate-500 py-8">Sin registros</p>';
+ ['alerts','bio','events'].forEach(t=>{$('tab-'+t).className='flex-1 px-2 py-3 text-sm font-semibold flex items-center justify-center gap-1.5 border-b-4 '+(t===tab?'border-emerald-600 text-mg-900 bg-white':'border-transparent text-slate-600 hover:bg-white')})}
+
+function renderMap(){dataLayer.clearLayers();Object.keys(markers).forEach(k=>delete markers[k]);Object.keys(polys).forEach(k=>delete polys[k]);
+ if(tab==='alerts'){alerts.forEach(a=>{const u=URG_ST[a.urg],done=a.st==='Resuelta',col=done?'#94a3b8':u.c;let m;
+   const pop=`<b>${a.tipo} — ${a.urg}</b><br>${a.zona}<br><i>${a.st}</i>${role==='com'?'<br><small>Ubicación aproximada</small>':''}`;
+   if(role==='ops'){m=L.marker([a.lat,a.lng],{icon:pinIcon(col,a.id,a.urg==='Crítica'&&!done?'crit':'')})}
+   else{const p=approx(a.lat,a.lng);m=L.circle(p,{radius:450,color:col,fillColor:col,fillOpacity:0.25,weight:2,dashArray:'4 4'})}
+   m.bindPopup(pop).addTo(dataLayer);markers[a.id]=m})}
+ else if(tab==='bio'){bio.forEach(b=>{const m=L.marker([b.lat,b.lng],{icon:pinIcon(b.val?'#047857':'#10b981',b.val?'✓':'•')}).bindPopup(`<b>${b.titulo}</b><br>${b.tags.join(', ')}<br><small>${b.val?'Validado CRA':'Pendiente de validación'}</small>`).addTo(dataLayer);markers[b.id]=m})}
+ else{events.forEach(e=>{const m=L.marker([e.lat,e.lng],{icon:pinIcon('#2563eb',e.tipo==='Siembra'?'S':'L')}).bindPopup(`<b>${e.org}</b><br>${e.tipo} · ${e.fecha}<br>${e.vol} voluntarios · ${e.st}`).addTo(dataLayer);markers[e.id]=m;if(e.st!=='Pendiente')drawPoly(e)})}
+ const lg={alerts:`<b>Urgencia</b> <span style="color:#dc2626">● Crítica</span> <span style="color:#f59e0b">● Alta</span> <span style="color:#ca8a04">● Media</span> <span style="color:#94a3b8">● Resuelta</span>${role==='com'?'<br><small>Círculos = zona aproximada</small>':''}`,bio:'<b>Biodiversidad</b> <span style="color:#10b981">● Registro</span> <span style="color:#047857">● Validado ✓</span>',events:'<b>Eventos</b> <span style="color:#2563eb">● S Siembra · L Limpieza</span> ▭ Polígono asignado'};$('legend').innerHTML=lg[tab]}
+function drawPoly(e){const d=Math.sqrt(e.ha)*0.0032,p=[[e.lat+d,e.lng-d],[e.lat+d,e.lng+d],[e.lat-d,e.lng+d],[e.lat-d,e.lng-d]];
+ polys[e.id]=L.polygon(p,{color:'#2563eb',weight:3,fillColor:'#3b82f6',fillOpacity:0.3}).bindTooltip(`Polígono ${e.org} · ${e.ha} ha`,{sticky:true}).addTo(dataLayer)}
+
+function render(){renderKPIs();renderList();renderMap();icons()}
+
+function advance(id){const a=alerts.find(x=>x.id===id);a.st=a.st==='Recibida'?'En atención':'Resuelta';toast(`Ticket #${id}: ${a.st}`);render()}
+function validate(id){bio.find(x=>x.id===id).val=true;toast('Registro validado técnicamente por biología CRA');render()}
+function approve(id){const e=events.find(x=>x.id===id);e.st='Aprobada';render();map.flyToBounds(polys[id].getBounds(),{maxZoom:16});toast('Evento aprobado y polígono asignado en el mapa')}
+function focusAlert(id){selected=id;const a=alerts.find(x=>x.id===id);renderList();icons();const ll=role==='ops'?[a.lat,a.lng]:approx(a.lat,a.lng);map.flyTo(ll,role==='ops'?17:15,{duration:1});setTimeout(()=>markers[id]&&markers[id].openPopup(),900)}
+function focusBio(id){selected=id;const b=bio.find(x=>x.id===id);renderList();icons();map.flyTo([b.lat,b.lng],17,{duration:1});setTimeout(()=>markers[id]&&markers[id].openPopup(),900)}
+function focusEvent(id){selected=id;const e=events.find(x=>x.id===id);renderList();icons();map.flyTo([e.lat,e.lng],16,{duration:1});setTimeout(()=>markers[id]&&markers[id].openPopup(),900)}
+
+function openModal(h){$('modalBox').innerHTML=h;$('modal').classList.remove('hidden');$('modal').classList.add('flex');icons()}
+function closeModal(){$('modal').classList.add('hidden');$('modal').classList.remove('flex')}
+function impact(id){const e=events.find(x=>x.id===id),est=e.st!=='Ejecutada';
+ openModal(`<div class="flex justify-between items-start"><div><h2 class="text-lg font-bold text-mg-900">Impacto ambiental</h2><p class="text-sm text-slate-600">${e.org} · ${e.tipo}</p></div><button onclick="closeModal()" aria-label="Cerrar" class="p-1 hover:bg-slate-100 rounded"><i data-lucide="x" class="w-5 h-5"></i></button></div>
+ <span class="inline-block mt-2 text-xs font-bold px-2 py-0.5 rounded-full ${est?'bg-amber-100 text-amber-800':'bg-emerald-100 text-emerald-800'}">${est?'Proyección estimada':'Resultado verificado'}</span>
+ <div class="grid grid-cols-3 gap-3 mt-4 text-center"><div class="bg-emerald-50 rounded-xl p-3"><p class="text-2xl font-extrabold text-emerald-800">${e.imp.a.toLocaleString('es-CO')}</p><p class="text-xs text-slate-600">Propágulos sembrados</p></div><div class="bg-blue-50 rounded-xl p-3"><p class="text-2xl font-extrabold text-blue-800">${e.imp.r.toLocaleString('es-CO')}</p><p class="text-xs text-slate-600">kg de residuos</p></div><div class="bg-slate-100 rounded-xl p-3"><p class="text-2xl font-extrabold text-slate-800">${e.imp.c}</p><p class="text-xs text-slate-600">t CO₂ captadas / año</p></div></div>
+ <p class="text-xs text-slate-500 mt-4">${e.vol} voluntarios · ${e.ha} hectáreas · Fecha ${e.fecha}</p>
+ <button onclick="closeModal()" class="mt-4 w-full bg-mg-800 hover:bg-mg-700 text-white font-bold py-2.5 rounded-lg">Cerrar</button>`)}
+
+function openSim(){openModal(`<div class="flex justify-between items-start"><div><h2 class="text-lg font-bold text-mg-900 flex items-center gap-2"><i data-lucide="message-circle" class="w-5 h-5 text-green-600"></i>Simular mensaje de WhatsApp</h2><p class="text-xs text-slate-500">Inyecta un reporte en vivo al mapa</p></div><button onclick="closeModal()" aria-label="Cerrar" class="p-1 hover:bg-slate-100 rounded"><i data-lucide="x" class="w-5 h-5"></i></button></div>
+ <form onsubmit="submitSim(event)" class="mt-4 space-y-3 text-sm">
+ <label class="block font-semibold">Tipo de reporte<select id="sTipo" class="mt-1 w-full border border-slate-300 rounded-lg p-2"><option>Tala</option><option>Quema</option><option>Escombros</option><option value="Avistamiento">Avistamiento de flora/fauna</option></select></label>
+ <div class="grid grid-cols-2 gap-3"><label class="block font-semibold">Urgencia<select id="sUrg" class="mt-1 w-full border border-slate-300 rounded-lg p-2"><option>Crítica</option><option selected>Alta</option><option>Media</option></select></label>
+ <label class="block font-semibold">Reportante<select id="sRep" class="mt-1 w-full border border-slate-300 rounded-lg p-2"><option>Habitante local</option><option>Turista</option></select></label></div>
+ <label class="block font-semibold">Mensaje<textarea id="sDesc" rows="3" required class="mt-1 w-full border border-slate-300 rounded-lg p-2" placeholder="Ej: Están cortando mangle cerca del puente..."></textarea></label>
+ <button class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2.5 rounded-lg">Enviar al sistema</button></form>`)}
+function submitSim(ev){ev.preventDefault();const t=$('sTipo').value,d=$('sDesc').value.trim(),lat=11.036+Math.random()*0.016,lng=-74.866+Math.random()*0.021;closeModal();
+ if(t==='Avistamiento'){const tg=['Garza blanca','Cangrejo azul','Mangle rojo','Iguana verde'];bio.unshift({id:nextId++,titulo:d.slice(0,60),tags:[tg[Math.floor(Math.random()*tg.length)]],lat,lng,autor:$('sRep').value+' (WhatsApp)',fuente:'WhatsApp',reviews:false,val:false,grad:'from-green-500 to-teal-800',icon:'camera',min:0});tab='bio';selected=null;render();toast('Nuevo avistamiento recibido por WhatsApp');setTimeout(()=>focusBio(bio[0].id),200)}
+ else{const a={id:nextId++,tipo:t,urg:$('sUrg').value,lat,lng,rep:$('sRep').value,st:'Recibida',min:0,zona:'Ubicación compartida (WhatsApp)',desc:d};alerts.push(a);tab='alerts';selected=null;render();toast(`Nueva denuncia #${a.id} recibida por WhatsApp`);setTimeout(()=>focusAlert(a.id),200)}}
+
+setRole('ops');
+setTimeout(()=>map.invalidateSize(),300);
+window.addEventListener('resize',()=>map.invalidateSize());
+</script>
+</body>
+</html>
