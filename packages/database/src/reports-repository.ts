@@ -260,7 +260,8 @@ function evidenceFromRow(row: EvidenceRow): Evidence {
 export class SupabaseReportsRepository {
   constructor(private readonly client: SupabaseClient) {}
 
-  async upsertCategory(category: ReportCategory): Promise<void> {
+  /** Upserts by code and returns the durable category id stored in Supabase. */
+  async upsertCategory(category: ReportCategory): Promise<string> {
     // Reuse existing UUID when code already exists (memory seeds new ids each boot).
     const { data: existing, error: lookupError } = await this.client
       .from('report_categories')
@@ -269,15 +270,17 @@ export class SupabaseReportsRepository {
       .maybeSingle();
     if (lookupError) throw new Error(`upsertCategory.lookup: ${lookupError.message}`);
 
+    const durableId = (existing as { id?: string } | null)?.id ?? category.id;
     const row = categoryToRow({
       ...category,
-      id: (existing as { id?: string } | null)?.id ?? category.id,
+      id: durableId,
     });
 
     const { error } = await this.client
       .from('report_categories')
       .upsert(row, { onConflict: 'code' });
     if (error) throw new Error(`upsertCategory: ${error.message}`);
+    return durableId;
   }
 
   async listCategories(): Promise<ReportCategory[]> {
@@ -292,7 +295,9 @@ export class SupabaseReportsRepository {
 
   async persistCreate(result: CreateReportResult, events: ReportEvent[]): Promise<void> {
     if (result.category) {
-      await this.upsertCategory(result.category);
+      const durableCategoryId = await this.upsertCategory(result.category);
+      result.category.id = durableCategoryId;
+      result.report.categoryId = durableCategoryId;
     }
 
     if (result.reporterReference) {
