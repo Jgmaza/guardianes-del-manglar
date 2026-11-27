@@ -53,11 +53,16 @@ jobs:
           }
           upsert NEXT_PUBLIC_SUPABASE_URL "$NEXT_PUBLIC_SUPABASE_URL"
           upsert NEXT_PUBLIC_SUPABASE_ANON_KEY "$NEXT_PUBLIC_SUPABASE_ANON_KEY"
+          # Server-only duplicates — not inlined by Next at build time; read at runtime.
+          upsert SUPABASE_URL "$NEXT_PUBLIC_SUPABASE_URL"
+          upsert SUPABASE_ANON_KEY "$NEXT_PUBLIC_SUPABASE_ANON_KEY"
           # Always on for production so the CRA panel can hydrate from Postgres.
           upsert NEXT_PUBLIC_ENABLE_SUPABASE "true"
           upsert SUPABASE_SERVICE_ROLE_KEY "$SUPABASE_SERVICE_ROLE_KEY"
           upsert NEXT_PUBLIC_APP_NAME "${NEXT_PUBLIC_APP_NAME:-Guardianes del Manglar}"
           upsert NEXT_PUBLIC_APP_URL "${NEXT_PUBLIC_APP_URL:-https://guardianes-del-manglar.vercel.app}"
+          # Ensure we never force memory in production.
+          npx vercel@latest env rm REPORTS_PERSISTENCE production --yes --token="$VERCEL_TOKEN" 2>/dev/null || true
 
       - name: Pull Vercel env
         run: npx vercel@latest pull --yes --environment=production --token="${{ secrets.VERCEL_TOKEN }}"
@@ -78,13 +83,15 @@ jobs:
             local file="$1"
             mkdir -p "$(dirname "$file")"
             touch "$file"
-            for key in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY NEXT_PUBLIC_ENABLE_SUPABASE SUPABASE_SERVICE_ROLE_KEY NEXT_PUBLIC_APP_NAME NEXT_PUBLIC_APP_URL; do
+            for key in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY NEXT_PUBLIC_ENABLE_SUPABASE SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY NEXT_PUBLIC_APP_NAME NEXT_PUBLIC_APP_URL REPORTS_PERSISTENCE; do
               grep -v "^${key}=" "$file" > "${file}.tmp" || true
               mv "${file}.tmp" "$file"
             done
             {
               echo "NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}"
               echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}"
+              echo "SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}"
+              echo "SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}"
               echo "NEXT_PUBLIC_ENABLE_SUPABASE=true"
               echo "SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}"
               echo "NEXT_PUBLIC_APP_NAME=Guardianes del Manglar"
@@ -106,6 +113,8 @@ jobs:
           NEXT_PUBLIC_ENABLE_SUPABASE: "true"
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Deploy

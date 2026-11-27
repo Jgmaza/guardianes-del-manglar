@@ -23,14 +23,27 @@ describe('@guardianes/database env', () => {
     });
   });
 
-  it('respects NEXT_PUBLIC_ENABLE_SUPABASE=false', () => {
-    expect(
-      isSupabaseConfigured({
-        NEXT_PUBLIC_ENABLE_SUPABASE: 'false',
-        NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon-example',
-      }),
-    ).toBe(false);
+  it('prefers server-only SUPABASE_URL / SUPABASE_ANON_KEY over NEXT_PUBLIC_*', () => {
+    const config = getSupabasePublicConfig({
+      SUPABASE_URL: 'https://server.supabase.co',
+      SUPABASE_ANON_KEY: 'server-anon',
+      NEXT_PUBLIC_SUPABASE_URL: 'https://public.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'public-anon',
+    });
+    expect(config).toEqual({
+      url: 'https://server.supabase.co',
+      anonKey: 'server-anon',
+    });
+  });
+
+  it('keeps reports persistence on even if NEXT_PUBLIC_ENABLE_SUPABASE=false', () => {
+    const env = {
+      NEXT_PUBLIC_ENABLE_SUPABASE: 'false',
+      NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon-example',
+    };
+    expect(isSupabaseConfigured(env)).toBe(true);
+    expect(isReportsPersistenceConfigured(env)).toBe(true);
   });
 
   it('detects service role vs reports persistence gates', () => {
