@@ -1,35 +1,64 @@
 import { randomUUID, createHash } from "node:crypto";
 
+const TIPO_TO_CATEGORY = {
+  TALA: "tala",
+  INCENDIO: "incendio",
+  RESIDUOS: "residuos",
+  FAUNA: "fauna",
+  INVASION: "invasion",
+};
+
 /**
  * Arma el body canónico para POST /api/v1/reports.
- * No envía PII. El POST live se conecta cuando REPORTS_API_URL esté configurada.
+ * Sin PII. Persiste vía API (memoria o Supabase según env del web).
  */
 export function buildReportPayload(session, opts = {}) {
   const {
     from = "",
     observedAt = new Date().toISOString(),
     location = null,
-    categoryCode = "uncategorized",
+    categoryCode,
   } = opts;
 
   const reporterHandle = from
     ? createHash("sha256").update(String(from)).digest("hex").slice(0, 24)
     : undefined;
 
+  const resolvedCategory =
+    categoryCode ??
+    TIPO_TO_CATEGORY[String(session.tipo || "").toUpperCase()] ??
+    "uncategorized";
+
   const description = [
     `Tipo: ${session.tipo ?? "N/D"}`,
     `Alerta: ${session.nivel ?? "N/D"}`,
     `Zona: ${session.zona ?? "N/D"}`,
     `Privacidad: ${session.privacidad ?? "N/D"}`,
-  ].join(" | ");
+    session.prioridad ? `Prioridad: ${session.prioridad}` : null,
+  ]
+    .filter(Boolean)
+    .join(" | ");
 
   const body = {
     channel: "whatsapp",
     observedAt,
     description,
-    categoryCode,
+    categoryCode: resolvedCategory,
     clientReportId: randomUUID(),
+    triage: {
+      tipo: session.tipo ?? undefined,
+      nivel: session.nivel ?? undefined,
+      zona: session.zona ?? undefined,
+      privacidad: session.privacidad ?? undefined,
+      prioridad: session.prioridad ?? undefined,
+    },
   };
+
+  // Drop empty triage keys
+  body.triage = Object.fromEntries(
+    Object.entries(body.triage).filter(([, v]) => v != null && v !== ""),
+  );
+  if (!Object.keys(body.triage).length) delete body.triage;
 
   if (reporterHandle) body.reporterHandle = reporterHandle;
 

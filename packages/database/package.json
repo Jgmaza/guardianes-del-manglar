@@ -16,6 +16,8 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
+    "@guardianes/contracts": "workspace:*",
+    "@guardianes/report-engine": "workspace:*",
     "@supabase/supabase-js": "^2.47.10"
   },
   "devDependencies": {

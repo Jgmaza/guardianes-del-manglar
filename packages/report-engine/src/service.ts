@@ -125,6 +125,7 @@ export class ReportService {
     this.appendEvent(report.id, 'created', {
       channel: report.channel,
       categoryId: report.categoryId,
+      ...(input.triage ? { triage: input.triage } : {}),
     });
     if (category) {
       this.appendEvent(report.id, 'category_assigned', {

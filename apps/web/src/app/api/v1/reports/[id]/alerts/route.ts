@@ -13,7 +13,7 @@ export async function POST(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
     const body = (await request.json()) as Record<string, unknown>;
-    const alert = getReportService().createPreliminaryAlert({
+    const alert = await getReportService().createPreliminaryAlert({
       ...body,
       reportId: id,
     });
