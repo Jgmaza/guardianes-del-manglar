@@ -4,6 +4,7 @@ import type {
   Report,
   ReportCategory,
   ReportEvent,
+  ReportGeoMatch,
   SanitizedReportExport,
 } from '@guardianes/contracts';
 
@@ -81,7 +82,7 @@ export function toDashboardListItem(options: {
   category: ReportCategory | null;
   evidenceCount: number;
   hasPreliminaryAlert: boolean;
-  geoMatch?: import('@guardianes/contracts').ReportGeoMatch | null;
+  geoMatch?: ReportGeoMatch | null;
 }): DashboardReportListItem {
   const geo = options.geoMatch ?? null;
   return {
